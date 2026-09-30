@@ -2,7 +2,7 @@
 
 ## Missão
 
-Definir como clientes vão conversar com a API de propostas da Fatec Antonio Brambilla. Ao terminar, você terá importado e explorado uma coleção Insomnia que registra as operações previstas. Nesta etapa, a coleção é o contrato de trabalho; os endpoints serão implementados na etapa JPA.
+Implementar os primeiros endpoints REST de propostas da Fatec Antonio Brambilla a partir do contrato. Ao terminar, você terá controllers, validação HTTP e uma coleção Insomnia para percorrer o CRUD, filtros, catálogos e curtidas. Nesta etapa os dados ficam em memória; a etapa JPA substituirá o armazenamento.
 
 ## Antes de começar
 
@@ -10,17 +10,17 @@ Definir como clientes vão conversar com a API de propostas da Fatec Antonio Bra
 - Insomnia instalado.
 - Repositório clonado e terminal aberto na raiz.
 
-## 1. Conheça o contrato atual do código
+## 1. Inicie a API
 
-Abra `src/main/java/br/com/fatecararas/piapi/resources/ProjetosResource.java`. Ele demonstra quatro mapeamentos vazios em `/api/projetos`. Esse esqueleto é um ponto de partida para estudar verbos e controllers; o domínio definido para a API é proposta interdisciplinar, por isso o contrato planejado usa `/api/propostas`.
+Execute `./gradlew bootRun`. O recurso principal fica em `src/main/java/br/com/fatecararas/piapi/resources/PropostasResource.java`; os catálogos ficam em `CatalogosResource`. A aplicação começa com uma proposta demonstrativa e listas de referência para que você possa experimentar as requisições sem configurar um banco.
 
 ## 2. Importe a coleção
 
-No Insomnia, use **Import** e selecione `insomnia/propostas-insomnia.json`. A coleção inclui listagem e filtros, detalhe, criação, atualização, remoção lógica e curtidas. As chamadas são o contrato a implementar nas próximas etapas e podem retornar 404 enquanto os endpoints ainda não existirem.
+No Insomnia, use **Import** e selecione `insomnia/propostas-insomnia.json`. A coleção inclui listagem e filtros, detalhe, criação, atualização, remoção lógica, curtidas e leitura dos catálogos. Execute as chamadas e observe o status e o corpo de resposta.
 
 ## 3. Leia o controller
 
-`@RestController` registra um controller que escreve respostas HTTP; `@RequestMapping` define o prefixo da rota; cada anotação `@GetMapping`, `@PostMapping`, `@PutMapping` ou `@DeleteMapping` associa um verbo à operação. Na implementação, uma proposta será tratada como recurso próprio, identificado por `{id}`.
+`@RestController` registra um controller que escreve respostas HTTP; `@RequestMapping` define o prefixo da rota; cada anotação `@GetMapping`, `@PostMapping`, `@PutMapping` ou `@DeleteMapping` associa um verbo à operação. `PropostasResource` delega regras ao `PropostaService`; não guarda estado HTTP nem dados diretamente no controller.
 
 | Operação | Verbo | Rota | Uso esperado |
 |---|---|---|---|
@@ -41,7 +41,7 @@ sequenceDiagram
     actor Pessoa
     participant I as Insomnia
     participant S as Spring MVC
-    participant C as ProjetosResource
+    participant C as PropostasResource
     Pessoa->>I: Executa método e rota
     I->>S: Requisição HTTP
     S->>C: Seleciona o mapeamento
@@ -52,7 +52,9 @@ sequenceDiagram
 
 ## 4. Experimente e registre
 
-Escolha três chamadas da coleção e, antes de implementá-las, anote método, caminho, parâmetros, JSON de entrada e resposta de sucesso esperada. Observe que públicos-alvo são escolhidos por ID no catálogo e que cada página da consulta contém 10 propostas. Discuta por que curtida usa um recurso próprio e por que excluir uma proposta significa arquivá-la.
+Escolha três chamadas da coleção e anote método, caminho, parâmetros, JSON de entrada e resposta de sucesso. Observe que públicos-alvo são escolhidos por ID no catálogo e que cada página contém 10 propostas. Discuta por que curtida usa um recurso próprio e por que excluir uma proposta significa arquivá-la.
+
+As listas de cursos, categorias e públicos-alvo e a proposta inicial são dados demonstrativos em memória. Nesta etapa, todas as chamadas de escrita usam um usuário demonstrativo; não há login nem controle de acesso até a etapa Spring Security. Reiniciar a aplicação restaura os dados iniciais.
 
 ## Desafio
 
@@ -60,7 +62,8 @@ Revise o contrato com outra dupla. Confirme se os nomes dos campos são claros, 
 
 ## Pronto quando
 
-- A coleção importa no Insomnia.
+- A aplicação inicia e a coleção importa no Insomnia.
+- As operações retornam os status previstos no modelo de dados.
 - O grupo consegue explicar verbo HTTP, caminho, identificador e filtros.
 - O modelo e os exemplos de JSON refletem a Fatec Antonio Brambilla.
 - A turma registra dúvidas sobre validações e códigos de resposta para resolver na implementação.

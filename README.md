@@ -33,7 +33,7 @@ Requisitos: JDK 17 e acesso às dependências Gradle. Na raiz:
 ./gradlew bootRun
 ```
 
-O controller que já existe responde em `http://localhost:8080/api/projetos` e ainda é um esqueleto demonstrativo. A coleção Insomnia registra o contrato futuro em `/api/propostas`; as rotas serão implementadas na etapa de persistência.
+Na implementação da etapa 01, a API responde em `http://localhost:8080/api/propostas`. Essa etapa usa armazenamento em memória e dados de catálogo demonstrativos; tudo volta ao estado inicial ao reiniciar. A etapa JPA substituirá esse armazenamento sem alterar o contrato HTTP.
 
 ## Materiais
 

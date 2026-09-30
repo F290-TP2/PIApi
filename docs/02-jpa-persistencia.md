@@ -4,7 +4,7 @@ Use o [modelo acordado](00-modelo-dados.md) como contrato: `Proposta`, `Usuario`
 
 ## Missão
 
-Trocar as respostas demonstrativas por propostas guardadas num banco. O fluxo passa a ter responsabilidades claras: controller cuida do HTTP, service das regras e repository do acesso a dados.
+Substituir o armazenamento em memória da etapa 01 por propostas guardadas num banco, mantendo o contrato HTTP. O fluxo passa a ter responsabilidades claras: controller cuida do HTTP, service das regras e repository do acesso a dados.
 
 ## 1. Desenhe o recurso
 
@@ -21,12 +21,13 @@ flowchart LR
 
 ## 2. Implemente em pequenas entregas
 
-1. Crie entidades `Proposta`, `Usuario`, `Categoria`, `Curso` e `PublicoAlvo` com `@Entity`, chaves e campos conforme o modelo. Mapeie as relações muitos-para-muitos com cursos e públicos-alvo.
-2. Crie um repository estendendo `JpaRepository<Proposta, Long>`.
-3. Crie também a entidade associativa `Curtida` com chave única (`usuarioId`, `propostaId`) para impedir curtidas duplicadas. Crie services que implementem as regras e deleguem persistência aos repositories.
-4. Faça o controller receber e devolver DTOs, sem expor detalhes da entidade.
-5. Adicione validações de entrada e respostas HTTP coerentes: `201 Created` ao criar, `404 Not Found` para identificador inexistente e `204 No Content` ao excluir com sucesso.
-6. Configure o perfil local com H2 para experimentação. Use migrações versionadas quando o esquema passar a ser compartilhado; confira como Flyway está configurado antes de misturar criação automática de esquema e migrações.
+1. Adicione as dependências Spring Data JPA, Spring Boot Flyway, H2 para desenvolvimento local, o conector do banco escolhido e suporte Flyway para esse banco.
+2. Crie entidades `Proposta`, `Usuario`, `Categoria`, `Curso` e `PublicoAlvo` com `@Entity`, chaves e campos conforme o modelo. Mapeie as relações muitos-para-muitos com cursos e públicos-alvo.
+3. Crie um repository estendendo `JpaRepository<Proposta, Long>`.
+4. Crie também a entidade associativa `Curtida` com chave única (`usuarioId`, `propostaId`) para impedir curtidas duplicadas. Substitua o armazenamento em memória do `PropostaService` por repositories.
+5. Faça o controller continuar recebendo e devolvendo DTOs, sem expor detalhes da entidade.
+6. Adicione validações de entrada e respostas HTTP coerentes: `201 Created` ao criar, `404 Not Found` para identificador inexistente e `204 No Content` ao excluir com sucesso.
+7. Configure o perfil local com H2 para experimentação. Use migrações versionadas quando o esquema passar a ser compartilhado; confira como Flyway está configurado antes de misturar criação automática de esquema e migrações.
 
 Organize os pacotes por responsabilidade (por exemplo `controller`, `service`, `repository`, `domain` e `dto`) mantendo a convenção já usada no projeto quando fizer sentido.
 

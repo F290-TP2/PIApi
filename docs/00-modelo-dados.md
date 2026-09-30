@@ -1,6 +1,6 @@
 # Modelo de dados — propostas interdisciplinares
 
-Este documento fixa o vocabulário e as regras iniciais do domínio da API da Fatec Antonio Brambilla. A implementação será incremental. A primeira coleção Insomnia registra o contrato; persistência e relacionamentos serão construídos na etapa 02.
+Este documento fixa o vocabulário e as regras iniciais do domínio da API da Fatec Antonio Brambilla. A implementação será incremental. A etapa 01 implementa o contrato com armazenamento em memória; persistência JPA e relacionamentos no banco entram na etapa 02.
 
 ## Decisões de escopo
 
@@ -54,7 +54,7 @@ Este documento fixa o vocabulário e as regras iniciais do domínio da API da Fa
 
 ### `Curso`
 
-`id: Long`, `nome: String` (único, obrigatório, até 120 caracteres), `sigla: String` (opcional, única quando informada, até 20 caracteres) e `ativo: boolean`. O catálogo disponibiliza todos os cursos ativos da Fatec Antonio Brambilla; cursos inativos deixam de ser selecionáveis em novas propostas e filtros.
+`id: Long`, `nome: String` (único, obrigatório, até 120 caracteres), `sigla: String` (opcional, única quando informada, até 20 caracteres) e `ativo: boolean`. O catálogo disponibiliza todos os cursos ativos da Fatec Antonio Brambilla; cursos inativos deixam de ser selecionáveis em novas propostas e filtros. A demonstração inicial usa Desenvolvimento de Software Multiplataforma, Gestão Empresarial e Sistemas para Internet, conforme a [página institucional da unidade](https://fatecararas.cps.sp.gov.br/sobre-a-fatec-araras/).
 
 ### `Curtida`
 

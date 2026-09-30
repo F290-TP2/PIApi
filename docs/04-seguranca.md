@@ -22,7 +22,7 @@ O autor pode editar ou arquivar a própria proposta. A autorização por proprie
 
 ## 2. Configure e percorra o fluxo
 
-Adicione Spring Security e configure explicitamente as rotas públicas e protegidas. Para o exercício, escolha um mecanismo de autenticação adequado e documente como credenciais são criadas e armazenadas. Nunca grave senhas em texto puro: use um encoder de senha. Atribua papéis no servidor e valide permissões no backend.
+Adicione o starter Spring Security e configure explicitamente as rotas públicas e protegidas. Para o exercício, escolha um mecanismo de autenticação adequado e documente como credenciais são criadas e armazenadas. Nunca grave senhas em texto puro: use um encoder de senha. Atribua papéis no servidor e valide permissões no backend.
 
 ```mermaid
 sequenceDiagram

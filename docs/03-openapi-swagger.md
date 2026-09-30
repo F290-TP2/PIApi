@@ -4,9 +4,9 @@
 
 Gerar documentação interativa a partir da API, de modo que outra equipe descubra rotas, parâmetros e respostas sem ler o código-fonte.
 
-## 1. Confirme a dependência
+## 1. Adicione a dependência
 
-O `build.gradle` já declara `springdoc-openapi-starter-webmvc-ui`. Inicie a aplicação e confira a interface em `http://localhost:8080/swagger-ui/index.html` e o documento JSON em `http://localhost:8080/v3/api-docs`. Se a rota diferir, confira a versão do springdoc e o log de inicialização.
+Adicione `org.springdoc:springdoc-openapi-starter-webmvc-ui` ao `build.gradle` usando a versão compatível com o Spring Boot do projeto. Inicie a aplicação e confira a interface em `http://localhost:8080/swagger-ui/index.html` e o documento JSON em `http://localhost:8080/v3/api-docs`. Se a rota diferir, confira a versão do springdoc e o log de inicialização.
 
 ## 2. Torne o contrato legível
 
