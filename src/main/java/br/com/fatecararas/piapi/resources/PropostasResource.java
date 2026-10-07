@@ -7,6 +7,7 @@ import br.com.fatecararas.piapi.api.dto.PropostaResponse;
 import br.com.fatecararas.piapi.domain.PropostaService;
 import br.com.fatecararas.piapi.domain.StatusProposta;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,15 +22,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/propostas")
 public class PropostasResource {
 
     private final PropostaService propostaService;
-
-    public PropostasResource(PropostaService propostaService) {
-        this.propostaService = propostaService;
-    }
 
     @GetMapping
     public ResponseEntity<PaginaResponse<PropostaResponse>> listar(

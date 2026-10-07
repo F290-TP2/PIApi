@@ -1,59 +1,85 @@
 package br.com.fatecararas.piapi.domain;
 
 import br.com.fatecararas.piapi.api.dto.ItemCatalogoResponse;
+import br.com.fatecararas.piapi.domain.entity.Categoria;
+import br.com.fatecararas.piapi.domain.entity.Curso;
+import br.com.fatecararas.piapi.domain.entity.PublicoAlvo;
+import br.com.fatecararas.piapi.domain.repository.CategoriaRepository;
+import br.com.fatecararas.piapi.domain.repository.CursoRepository;
+import br.com.fatecararas.piapi.domain.repository.PublicoAlvoRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Service
+@RequiredArgsConstructor
 public class CatalogoService {
 
-    private final List<ItemCatalogoResponse> categorias = List.of(
-            new ItemCatalogoResponse(1L, "Tecnologia e inovação", "Soluções digitais e novos produtos.", null),
-            new ItemCatalogoResponse(2L, "Sustentabilidade", "Soluções ambientais e uso responsável de recursos.", null),
-            new ItemCatalogoResponse(3L, "Empreendedorismo", "Soluções para negócios e desenvolvimento local.", null),
-            new ItemCatalogoResponse(4L, "Inclusão e cidadania", "Soluções para participação social e acessibilidade.", null));
+    private final CategoriaRepository categorias;
+    private final CursoRepository cursos;
+    private final PublicoAlvoRepository publicos;
 
-    private final List<ItemCatalogoResponse> cursos = List.of(
-            new ItemCatalogoResponse(1L, "Desenvolvimento de Software Multiplataforma", null, "DSM"),
-            new ItemCatalogoResponse(2L, "Gestão Empresarial", null, "GE"),
-            new ItemCatalogoResponse(3L, "Sistemas para Internet", null, "SI"));
-
-    private final List<ItemCatalogoResponse> publicosAlvo = List.of(
-            new ItemCatalogoResponse(1L, "Comunidade local", "Moradores e organizações da região.", null),
-            new ItemCatalogoResponse(2L, "Pequenos produtores", "Pequenos produtores e cooperativas locais.", null),
-            new ItemCatalogoResponse(3L, "Pequenos negócios", "Microempreendedores e empresas de pequeno porte.", null),
-            new ItemCatalogoResponse(4L, "Estudantes", "Estudantes de escolas e instituições de ensino.", null));
-
+    @Transactional(readOnly = true)
     public List<ItemCatalogoResponse> listarCategorias() {
-        return categorias;
+        return categorias.findByAtivaTrueOrderByNomeAsc().stream()
+                .map(c -> new ItemCatalogoResponse(c.getId(), c.getNome(), c.getDescricao(), null))
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ItemCatalogoResponse> listarCursos() {
-        return cursos;
+        return cursos.findByAtivoTrueOrderByNomeAsc().stream()
+                .map(c -> new ItemCatalogoResponse(c.getId(), c.getNome(), null, c.getSigla()))
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ItemCatalogoResponse> listarPublicosAlvo() {
-        return publicosAlvo;
+        return publicos.findByAtivoTrueOrderByNomeAsc().stream()
+                .map(p -> new ItemCatalogoResponse(p.getId(), p.getNome(), p.getDescricao(), null))
+                .toList();
     }
 
-    public void validarReferencias(Long categoriaId, List<Long> cursoIds, List<Long> publicoAlvoIds) {
-        validarExiste(categorias, categoriaId, "Categoria");
-        validarTodos(cursos, cursoIds, "Curso");
-        validarTodos(publicosAlvo, publicoAlvoIds, "Público-alvo");
+    @Transactional(readOnly = true)
+    public Categoria categoriaAtiva(Long id) {
+        return categorias.findByIdAndAtivaTrue(id)
+                .orElseThrow(() -> new RequisicaoInvalidaException("Categoria não existe ou está inativa."));
     }
 
-    private void validarTodos(List<ItemCatalogoResponse> catalogo, List<Long> ids, String tipo) {
-        Set<Long> existentes = catalogo.stream().map(ItemCatalogoResponse::id).collect(java.util.stream.Collectors.toSet());
-        if (ids.stream().anyMatch(id -> !existentes.contains(id))) {
-            throw new RequisicaoInvalidaException("Um ou mais identificadores de " + tipo.toLowerCase() + " não existem ou estão inativos.");
+    @Transactional(readOnly = true)
+    public Set<Curso> cursosAtivos(List<Long> ids) {
+        List<Curso> encontrados = cursos.findAllById(ids);
+        long esperados = ids.stream().distinct().count();
+        if (encontrados.size() != esperados || encontrados.stream().anyMatch(c -> !c.isAtivo())) {
+            throw new RequisicaoInvalidaException("Um ou mais identificadores de curso não existem ou estão inativos.");
         }
+        return new HashSet<>(encontrados);
     }
 
-    private void validarExiste(List<ItemCatalogoResponse> catalogo, Long id, String tipo) {
-        if (catalogo.stream().noneMatch(item -> item.id().equals(id))) {
-            throw new RequisicaoInvalidaException(tipo + " não existe ou está inativa.");
+    @Transactional(readOnly = true)
+    public Set<PublicoAlvo> publicosAlvoAtivos(List<Long> ids) {
+        List<PublicoAlvo> encontrados = publicos.findAllById(ids);
+        long esperados = ids.stream().distinct().count();
+        if (encontrados.size() != esperados || encontrados.stream().anyMatch(p -> !p.isAtivo())) {
+            throw new RequisicaoInvalidaException("Um ou mais identificadores de público-alvo não existem ou estão inativos.");
         }
+        return new HashSet<>(encontrados);
+    }
+
+    @Transactional(readOnly = true)
+    public Curso cursoAtivo(Long id) {
+        return cursos.findById(id)
+                .filter(Curso::isAtivo)
+                .orElseThrow(() -> new RequisicaoInvalidaException("Curso não existe ou está inativo."));
+    }
+
+    @Transactional(readOnly = true)
+    public PublicoAlvo publicoAlvoAtivo(Long id) {
+        return publicos.findByIdAndAtivoTrue(id)
+                .orElseThrow(() -> new RequisicaoInvalidaException("Público-alvo não existe ou está inativo."));
     }
 }
