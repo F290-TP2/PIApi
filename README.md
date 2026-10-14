@@ -7,13 +7,14 @@ Repositório didático da disciplina **Técnicas de Programação 2**. A turma v
 0. [Modelo de dados e contrato do domínio](docs/00-modelo-dados.md) — entidades, atributos, relações e regras propostas.
 1. [Primeira API REST e coleção Insomnia](docs/01-api-rest-insomnia.md) — contrato HTTP das propostas e coleção de requisições.
 2. [Persistência com JPA e ORM](docs/02-jpa-persistencia.md) — mapeamentos, entidades, repositórios e laboratório da camada de dados.
+   - [Camadas, requisições e validação — Tutorial 2b](docs/02b-camadas-requisicoes-validacao.md) — Repository, Service Layer, resources, DTOs e tratamento de erros.
 3. [Documentação com OpenAPI e Swagger UI](docs/03-openapi-swagger.md) — contrato navegável e testes pelo navegador.
 4. [Autenticação e autorização](docs/04-seguranca.md) — perfis `ADMIN` e `USER`, rotas públicas e protegidas.
 5. [Aplicação Web para propostas](docs/05-aplicacao-web.md) — login e publicação de propostas consumindo a API.
 
-Após o primeiro ciclo, o backlog aprovado inclui rascunhos de propostas, comentários e anexos. Esses itens serão planejados em etapas próprias depois que os cinco tutoriais iniciais estiverem concluídos.
+Após o primeiro ciclo, o backlog aprovado inclui rascunhos de propostas, comentários e anexos. Esses itens serão planejados em etapas próprias depois que o percurso inicial estiver concluído.
 
-Cada etapa é um tutorial incremental: leia a missão, execute os passos, confira o resultado e conclua o desafio. Os tutoriais registram decisões para que a implementação possa ser feita em sala, sem exigir que todo o conteúdo seja conhecido de antemão.
+Cada etapa é um tutorial incremental: leia a missão, execute os passos, confira o resultado e conclua o desafio. Os tutoriais permitem reproduzir de forma individual e assíncrona as implementações demonstradas ao vivo, conferindo exemplos e resultados em cada etapa.
 
 ## Domínio inicial
 
@@ -21,9 +22,23 @@ Uma proposta representa uma ideia de trabalho interdisciplinar da Fatec Antonio 
 
 ## Arquitetura e padrões
 
-O Spring MVC organiza a entrada HTTP em controllers, que delegam regras a serviços e acesso a dados a repositórios. A persistência usará JPA. Padrões GoF serão apresentados com motivação e consequência, por exemplo **Strategy** para critérios de busca que variem, **Builder** para objetos de consulta mais complexos e **Observer** apenas se surgir uma necessidade real de notificação. Não se deve criar classes de padrão sem um problema que as justifique.
+O Spring MVC organiza a entrada HTTP em controllers, que delegam regras a serviços e acesso a dados a repositórios. A persistência usa JPA/Hibernate, com repositories Spring Data e esquema versionado pelo Flyway. Padrões GoF serão apresentados com motivação e consequência, por exemplo **Strategy** para critérios de busca que variem, **Builder** para objetos de consulta mais complexos e **Observer** apenas se surgir uma necessidade real de notificação. Não se deve criar classes de padrão sem um problema que as justifique.
 
 MVC é a organização usada pela API. MVP e MVVM serão discutidos como alternativas de apresentação: MVP concentra a coordenação de tela em um Presenter; MVVM expõe estado e comandos em um ViewModel. Não são substitutos automáticos para as camadas Controller/Service/Repository do backend.
+
+Os pacotes abaixo partem de `br.com.fatecararas.piapi`:
+
+| Pacote | Responsabilidade |
+|---|---|
+| `infrastructure.web.rest.controller` | Resources: entrada e resposta HTTP |
+| `infrastructure.web.rest.exception` | Tradução de exceções em respostas HTTP |
+| `application.dto` | Contratos de entrada e saída; constraints de validação |
+| `application.service` | Casos de uso, regras e transações |
+| `domain.repository` | Interfaces de acesso aos dados |
+| `domain.entity` | Entidades e mapeamentos JPA |
+| `domain.model` e `domain.exception` | Enums e exceções da aplicação |
+
+Repository e Service Layer expressam responsabilidades; não são padrões GoF. O tutorial 2b detalha a ligação dessas camadas antes de documentar a API com Swagger.
 
 ## Executar
 
@@ -33,7 +48,9 @@ Requisitos: JDK 17 e acesso às dependências Gradle. Na raiz:
 ./gradlew bootRun
 ```
 
-Na implementação da etapa 01, a API responde em `http://localhost:8080/api/propostas`. Essa etapa usa armazenamento em memória e dados de catálogo demonstrativos; tudo volta ao estado inicial ao reiniciar. A etapa JPA substituirá esse armazenamento sem alterar o contrato HTTP.
+A API responde em `http://localhost:8080/api/propostas`. A implementação atual usa JPA com H2 em memória. Flyway cria as tabelas e carrega catálogos e um usuário demonstrativo; não há propostas iniciais. Os dados criados desaparecem ao encerrar a JVM. Ainda não há login: o autor usado nas operações é o usuário demonstrativo. Consulte o tutorial JPA para opções de banco persistente e o tutorial 2b para exercitar as requisições.
+
+Execute `./gradlew test` para verificar os testes. A documentação Swagger será implementada na próxima etapa.
 
 ## Materiais
 

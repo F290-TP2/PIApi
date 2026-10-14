@@ -1,6 +1,6 @@
 package br.com.fatecararas.piapi.domain.entity;
 
-import br.com.fatecararas.piapi.domain.PerfilUsuario;
+import br.com.fatecararas.piapi.domain.model.PerfilUsuario;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

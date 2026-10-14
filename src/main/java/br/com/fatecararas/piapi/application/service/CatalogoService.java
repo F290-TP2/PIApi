@@ -1,6 +1,6 @@
-package br.com.fatecararas.piapi.domain;
+package br.com.fatecararas.piapi.application.service;
 
-import br.com.fatecararas.piapi.api.dto.ItemCatalogoResponse;
+import br.com.fatecararas.piapi.application.dto.ItemCatalogoResponse;
 import br.com.fatecararas.piapi.domain.entity.Categoria;
 import br.com.fatecararas.piapi.domain.entity.Curso;
 import br.com.fatecararas.piapi.domain.entity.PublicoAlvo;
@@ -14,8 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import br.com.fatecararas.piapi.domain.exception.RequisicaoInvalidaException;
 
+// Service Layer: coordena casos de uso e regras, sem montar respostas HTTP.
 @Service
+// Injeta os repositories e demais serviços pelos campos final.
 @RequiredArgsConstructor
 public class CatalogoService {
 
@@ -44,6 +47,7 @@ public class CatalogoService {
                 .toList();
     }
 
+    // @NotNull no DTO não verifica existência nem situação do registro; fazemos isso aqui.
     @Transactional(readOnly = true)
     public Categoria categoriaAtiva(Long id) {
         return categorias.findByIdAndAtivaTrue(id)
@@ -53,6 +57,7 @@ public class CatalogoService {
     @Transactional(readOnly = true)
     public Set<Curso> cursosAtivos(List<Long> ids) {
         List<Curso> encontrados = cursos.findAllById(ids);
+        // IDs repetidos representam uma única associação no conjunto da proposta.
         long esperados = ids.stream().distinct().count();
         if (encontrados.size() != esperados || encontrados.stream().anyMatch(c -> !c.isAtivo())) {
             throw new RequisicaoInvalidaException("Um ou mais identificadores de curso não existem ou estão inativos.");
@@ -63,6 +68,7 @@ public class CatalogoService {
     @Transactional(readOnly = true)
     public Set<PublicoAlvo> publicosAlvoAtivos(List<Long> ids) {
         List<PublicoAlvo> encontrados = publicos.findAllById(ids);
+        // IDs repetidos representam uma única associação no conjunto da proposta.
         long esperados = ids.stream().distinct().count();
         if (encontrados.size() != esperados || encontrados.stream().anyMatch(p -> !p.isAtivo())) {
             throw new RequisicaoInvalidaException("Um ou mais identificadores de público-alvo não existem ou estão inativos.");

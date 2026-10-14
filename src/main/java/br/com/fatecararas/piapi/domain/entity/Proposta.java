@@ -1,6 +1,6 @@
 package br.com.fatecararas.piapi.domain.entity;
 
-import br.com.fatecararas.piapi.domain.StatusProposta;
+import br.com.fatecararas.piapi.domain.model.StatusProposta;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

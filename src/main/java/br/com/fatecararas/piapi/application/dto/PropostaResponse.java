@@ -1,10 +1,11 @@
-package br.com.fatecararas.piapi.api.dto;
+package br.com.fatecararas.piapi.application.dto;
 
-import br.com.fatecararas.piapi.domain.StatusProposta;
+import br.com.fatecararas.piapi.domain.model.StatusProposta;
 
 import java.time.Instant;
 import java.util.List;
 
+// DTO de saída: expõe os dados da proposta sem serializar as entidades JPA.
 public record PropostaResponse(
         Long id,
         String titulo,

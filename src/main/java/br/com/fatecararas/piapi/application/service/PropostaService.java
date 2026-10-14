@@ -1,9 +1,9 @@
-package br.com.fatecararas.piapi.domain;
+package br.com.fatecararas.piapi.application.service;
 
-import br.com.fatecararas.piapi.api.dto.AtualizarPropostaRequest;
-import br.com.fatecararas.piapi.api.dto.CriarPropostaRequest;
-import br.com.fatecararas.piapi.api.dto.PaginaResponse;
-import br.com.fatecararas.piapi.api.dto.PropostaResponse;
+import br.com.fatecararas.piapi.application.dto.AtualizarPropostaRequest;
+import br.com.fatecararas.piapi.application.dto.CriarPropostaRequest;
+import br.com.fatecararas.piapi.application.dto.PaginaResponse;
+import br.com.fatecararas.piapi.application.dto.PropostaResponse;
 import br.com.fatecararas.piapi.domain.entity.Curtida;
 import br.com.fatecararas.piapi.domain.entity.CurtidaId;
 import br.com.fatecararas.piapi.domain.entity.Curso;
@@ -27,12 +27,18 @@ import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import br.com.fatecararas.piapi.domain.exception.RequisicaoInvalidaException;
+import br.com.fatecararas.piapi.domain.exception.RecursoNaoEncontradoException;
+import br.com.fatecararas.piapi.domain.model.StatusProposta;
 
+// Service Layer: coordena casos de uso e regras, sem montar respostas HTTP.
 @Service
+// Injeta os repositories e demais serviços pelos campos final.
 @RequiredArgsConstructor
 public class PropostaService {
 
     public static final int TAMANHO_PAGINA = 10;
+    // Identidade temporária carregada pela migration; autenticação entra em outra etapa.
     private static final long USUARIO_DEMONSTRACAO_ID = 1L;
 
     private final PropostaRepository propostas;
@@ -40,6 +46,7 @@ public class PropostaService {
     private final CurtidaRepository curtidas;
     private final CatalogoService catalogo;
 
+    // A transação mantém as relações disponíveis ao converter entidades em DTOs.
     @Transactional(readOnly = true)
     public PaginaResponse<PropostaResponse> listar(String q, Long categoriaId, Long publicoAlvoId,
                                                    Long cursoId, StatusProposta status, int page) {
@@ -47,6 +54,7 @@ public class PropostaService {
             throw new RequisicaoInvalidaException("O parâmetro page deve ser maior ou igual a zero.");
         }
 
+        // Os filtros se combinam com AND; a consulta pública sempre exige PUBLICADA.
         Specification<Proposta> filtros = (root, query, cb) -> {
             List<Predicate> criterios = new ArrayList<>();
             criterios.add(cb.equal(root.get("status"), StatusProposta.PUBLICADA));
@@ -87,6 +95,7 @@ public class PropostaService {
         return paraResponse(buscarEntidadePublicada(id));
     }
 
+    // Uma transação engloba as consultas aos catálogos e a gravação da proposta.
     @Transactional
     public PropostaResponse criar(CriarPropostaRequest request) {
         Proposta proposta = new Proposta();
@@ -109,6 +118,7 @@ public class PropostaService {
         proposta.setCategoria(catalogo.categoriaAtiva(request.categoriaId()));
         proposta.setCursos(catalogo.cursosAtivos(request.cursoIds()));
         proposta.setPublicosAlvo(catalogo.publicosAlvoAtivos(request.publicoAlvoIds()));
+        // A entidade já está gerenciada: dirty checking detecta mudanças; flush envia o SQL.
         propostas.flush();
         return paraResponse(proposta);
     }
@@ -117,6 +127,7 @@ public class PropostaService {
     public void arquivar(Long id) {
         Proposta proposta = propostas.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Proposta " + id + " não encontrada."));
+        // Exclusão lógica: a mudança será persistida ao concluir a transação.
         proposta.setStatus(StatusProposta.ARQUIVADA);
     }
 
@@ -150,6 +161,7 @@ public class PropostaService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário demonstrativo ausente."));
     }
 
+    // Executado dentro dos métodos transacionais: lê relações lazy e monta apenas a saída.
     private PropostaResponse paraResponse(Proposta proposta) {
         return new PropostaResponse(
                 proposta.getId(),

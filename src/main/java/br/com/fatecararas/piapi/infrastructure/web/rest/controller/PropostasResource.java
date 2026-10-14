@@ -1,11 +1,11 @@
-package br.com.fatecararas.piapi.resources;
+package br.com.fatecararas.piapi.infrastructure.web.rest.controller;
 
-import br.com.fatecararas.piapi.api.dto.AtualizarPropostaRequest;
-import br.com.fatecararas.piapi.api.dto.CriarPropostaRequest;
-import br.com.fatecararas.piapi.api.dto.PaginaResponse;
-import br.com.fatecararas.piapi.api.dto.PropostaResponse;
-import br.com.fatecararas.piapi.domain.PropostaService;
-import br.com.fatecararas.piapi.domain.StatusProposta;
+import br.com.fatecararas.piapi.application.dto.AtualizarPropostaRequest;
+import br.com.fatecararas.piapi.application.dto.CriarPropostaRequest;
+import br.com.fatecararas.piapi.application.dto.PaginaResponse;
+import br.com.fatecararas.piapi.application.dto.PropostaResponse;
+import br.com.fatecararas.piapi.application.service.PropostaService;
+import br.com.fatecararas.piapi.domain.model.StatusProposta;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +22,17 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
+// Lombok gera o construtor para injetar o service declarado como final.
 @RequiredArgsConstructor
+// Resource é o nome adotado para o controller REST: recebe HTTP e delega ao service.
 @RestController
+// Prefixo compartilhado pelas rotas desta classe.
 @RequestMapping("/api/propostas")
 public class PropostasResource {
 
     private final PropostaService propostaService;
 
+    // @RequestParam lê filtros da URL; page começa em zero quando não informado.
     @GetMapping
     public ResponseEntity<PaginaResponse<PropostaResponse>> listar(
             @RequestParam(required = false) String q,
@@ -40,25 +44,30 @@ public class PropostasResource {
         return ResponseEntity.ok(propostaService.listar(q, categoriaId, publicoAlvoId, cursoId, status, page));
     }
 
+    // @PathVariable obtém o identificador que faz parte do caminho.
     @GetMapping("/{id}")
     public ResponseEntity<PropostaResponse> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(propostaService.buscarPorId(id));
     }
 
+    // @RequestBody converte JSON em DTO; @Valid verifica suas constraints antes do método.
     @PostMapping
     public ResponseEntity<PropostaResponse> criar(@Valid @RequestBody CriarPropostaRequest request) {
         PropostaResponse criada = propostaService.criar(request);
+        // 201 Created devolve a representação e o endereço do recurso no cabeçalho Location.
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                 .buildAndExpand(criada.id()).toUri();
         return ResponseEntity.created(location).body(criada);
     }
 
+    // Atualiza todos os campos editáveis; não é uma atualização parcial (PATCH).
     @PutMapping("/{id}")
     public ResponseEntity<PropostaResponse> atualizar(@PathVariable Long id,
                                                        @Valid @RequestBody AtualizarPropostaRequest request) {
         return ResponseEntity.ok(propostaService.atualizar(id, request));
     }
 
+    // O service arquiva a proposta; 204 indica sucesso sem corpo na resposta.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> arquivar(@PathVariable Long id) {
         propostaService.arquivar(id);
