@@ -6,7 +6,7 @@ Repositório didático da disciplina **Técnicas de Programação 2**. A turma v
 
 0. [Modelo de dados e contrato do domínio](docs/00-modelo-dados.md) — entidades, atributos, relações e regras propostas.
 1. [Primeira API REST e coleção Insomnia](docs/01-api-rest-insomnia.md) — contrato HTTP das propostas e coleção de requisições.
-2. [Persistência com JPA e ORM](docs/02-jpa-persistencia.md) — entidades, repositório, serviço, validação e banco.
+2. [Persistência com JPA e ORM](docs/02-jpa-persistencia.md) — mapeamentos, entidades, repositórios e laboratório da camada de dados.
 3. [Documentação com OpenAPI e Swagger UI](docs/03-openapi-swagger.md) — contrato navegável e testes pelo navegador.
 4. [Autenticação e autorização](docs/04-seguranca.md) — perfis `ADMIN` e `USER`, rotas públicas e protegidas.
 5. [Aplicação Web para propostas](docs/05-aplicacao-web.md) — login e publicação de propostas consumindo a API.

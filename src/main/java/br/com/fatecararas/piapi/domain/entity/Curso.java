@@ -10,23 +10,30 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// @Entity torna a classe uma entidade que o JPA pode persistir.
 @Entity
+// @Table informa o nome da tabela no banco.
 @Table(name = "curso")
 @Getter
 @Setter
+// Lombok gera o construtor sem argumentos exigido pelo JPA.
 @NoArgsConstructor
 public class Curso {
 
+    // @Id identifica a chave primária; IDENTITY deixa o banco gerar seu valor.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // @Column: nullable=false impede NULL; unique=true impede valores repetidos; length define o tamanho da coluna de texto.
     @Column(nullable = false, unique = true, length = 120)
     private String nome;
 
+    // @Column: unique=true impede valores repetidos; length define o tamanho da coluna de texto.
     @Column(unique = true, length = 20)
     private String sigla;
 
+    // @Column: nullable=false impede NULL.
     @Column(nullable = false)
     private boolean ativo = true;
 }
