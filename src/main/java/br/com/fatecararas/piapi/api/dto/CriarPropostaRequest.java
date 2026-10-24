@@ -11,7 +11,7 @@ public record CriarPropostaRequest(
         @NotBlank @Size(min = 5, max = 120) String titulo,
         @NotBlank @Size(max = 300) String resumo,
         @NotBlank @Size(max = 10_000) String descricao,
-        @NotEmpty List<@NotNull Long> publicoAlvoIds,
-        @NotNull Long categoriaId,
-        @NotEmpty List<@NotNull Long> cursoIds) {
+        @NotEmpty List<@NotNull String> publicoAlvoIds,
+        @NotNull String categoriaId,
+        @NotEmpty List<@NotNull String> cursoIds) {
 }

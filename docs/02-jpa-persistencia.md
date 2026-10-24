@@ -1,5 +1,7 @@
 # Tutorial 2 — ORM com JPA: entidades e repositórios
 
+> Material histórico da etapa JPA. Para reproduzir este código, use a branch `feature/02-jpa-persistence-impl`. A branch MongoDB substitui esta persistência no [tutorial 03](03-mongodb-persistencia.md); os trechos SQL/JPA abaixo são mantidos para comparação.
+
 ## Missão e escopo do tutorial
 
 Este tutorial complementa a [primeira API REST](01-api-rest-insomnia.md) e aplica o [modelo de dados](00-modelo-dados.md). O objetivo é reproduzir a **camada de dados** da branch `feature/02-jpa-persistence-impl`: seis entidades, uma chave composta e seis repositórios. Controllers, DTOs, services, autenticação e testes HTTP pertencem a outros momentos do percurso; não serão implementados aqui.

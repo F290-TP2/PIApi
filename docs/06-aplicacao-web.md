@@ -1,4 +1,6 @@
-# Tutorial 5 — Aplicação Web para publicar propostas
+# Tutorial 6 — Aplicação Web para publicar propostas
+
+Pré-requisito: [segurança](05-seguranca.md). Trate todos os IDs como strings; não use conversão para número. Carregue IDs e nomes dos endpoints de catálogo.
 
 ## Missão
 

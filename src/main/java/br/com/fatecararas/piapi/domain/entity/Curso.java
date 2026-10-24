@@ -1,39 +1,26 @@
 package br.com.fatecararas.piapi.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
-// @Entity torna a classe uma entidade que o JPA pode persistir.
-@Entity
-// @Table informa o nome da tabela no banco.
-@Table(name = "curso")
+// Catálogo independente: propostas guardam IDs, sem duplicar nomes.
+@Document("cursos")
 @Getter
 @Setter
-// Lombok gera o construtor sem argumentos exigido pelo JPA.
 @NoArgsConstructor
 public class Curso {
-
-    // @Id identifica a chave primária; IDENTITY deixa o banco gerar seu valor.
+    // Spring Data converte a string hexadecimal para ObjectId no campo _id.
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    // @Column: nullable=false impede NULL; unique=true impede valores repetidos; length define o tamanho da coluna de texto.
-    @Column(nullable = false, unique = true, length = 120)
+    private String id;
+    // A unicidade depende de um índice real, criado na inicialização.
+    @Indexed(unique = true)
     private String nome;
-
-    // @Column: unique=true impede valores repetidos; length define o tamanho da coluna de texto.
-    @Column(unique = true, length = 20)
+    // O índice parcial permite várias siglas ausentes, mas não strings repetidas.
+    @Indexed(unique = true, partialFilter = "{ 'sigla': { '$type': 'string' } }")
     private String sigla;
-
-    // @Column: nullable=false impede NULL.
-    @Column(nullable = false)
     private boolean ativo = true;
 }

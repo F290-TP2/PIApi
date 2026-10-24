@@ -1,4 +1,6 @@
-# Tutorial 4 — Spring Security: ADMIN e USER
+# Tutorial 5 — Spring Security: ADMIN e USER
+
+Pré-requisitos: [MongoDB](03-mongodb-persistencia.md) e [Swagger](04-openapi-swagger.md). Use `UsuarioRepository` com `MongoRepository<Usuario, String>`; normalize email para minúsculas antes de persistir e mantenha o índice único. Substitua o usuário demonstrativo pela identidade autenticada e compare IDs em string. O valor `PENDENTE-ETAPA-SEGURANCA` é apenas marcador didático, não uma senha utilizável.
 
 ## Missão
 

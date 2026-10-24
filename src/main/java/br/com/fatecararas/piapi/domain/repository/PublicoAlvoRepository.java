@@ -1,14 +1,14 @@
 package br.com.fatecararas.piapi.domain.repository;
 
 import br.com.fatecararas.piapi.domain.entity.PublicoAlvo;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface PublicoAlvoRepository extends JpaRepository<PublicoAlvo, Long> {
+public interface PublicoAlvoRepository extends MongoRepository<PublicoAlvo, String> {
 
     List<PublicoAlvo> findByAtivoTrueOrderByNomeAsc();
 
-    Optional<PublicoAlvo> findByIdAndAtivoTrue(Long id);
+    Optional<PublicoAlvo> findByIdAndAtivoTrue(String id);
 }

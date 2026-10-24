@@ -32,16 +32,16 @@ public class PropostasResource {
     @GetMapping
     public ResponseEntity<PaginaResponse<PropostaResponse>> listar(
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) Long categoriaId,
-            @RequestParam(required = false) Long publicoAlvoId,
-            @RequestParam(required = false) Long cursoId,
+            @RequestParam(required = false) String categoriaId,
+            @RequestParam(required = false) String publicoAlvoId,
+            @RequestParam(required = false) String cursoId,
             @RequestParam(required = false) StatusProposta status,
             @RequestParam(defaultValue = "0") int page) {
         return ResponseEntity.ok(propostaService.listar(q, categoriaId, publicoAlvoId, cursoId, status, page));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PropostaResponse> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<PropostaResponse> buscarPorId(@PathVariable String id) {
         return ResponseEntity.ok(propostaService.buscarPorId(id));
     }
 
@@ -54,24 +54,24 @@ public class PropostasResource {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PropostaResponse> atualizar(@PathVariable Long id,
+    public ResponseEntity<PropostaResponse> atualizar(@PathVariable String id,
                                                        @Valid @RequestBody AtualizarPropostaRequest request) {
         return ResponseEntity.ok(propostaService.atualizar(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> arquivar(@PathVariable Long id) {
+    public ResponseEntity<Void> arquivar(@PathVariable String id) {
         propostaService.arquivar(id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}/curtida")
-    public ResponseEntity<PropostaResponse> curtir(@PathVariable Long id) {
+    public ResponseEntity<PropostaResponse> curtir(@PathVariable String id) {
         return ResponseEntity.ok(propostaService.curtir(id));
     }
 
     @DeleteMapping("/{id}/curtida")
-    public ResponseEntity<PropostaResponse> removerCurtida(@PathVariable Long id) {
+    public ResponseEntity<PropostaResponse> removerCurtida(@PathVariable String id) {
         return ResponseEntity.ok(propostaService.removerCurtida(id));
     }
 }

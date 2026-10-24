@@ -9,7 +9,6 @@ import br.com.fatecararas.piapi.domain.repository.CursoRepository;
 import br.com.fatecararas.piapi.domain.repository.PublicoAlvoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -23,35 +22,31 @@ public class CatalogoService {
     private final CursoRepository cursos;
     private final PublicoAlvoRepository publicos;
 
-    @Transactional(readOnly = true)
     public List<ItemCatalogoResponse> listarCategorias() {
         return categorias.findByAtivaTrueOrderByNomeAsc().stream()
                 .map(c -> new ItemCatalogoResponse(c.getId(), c.getNome(), c.getDescricao(), null))
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public List<ItemCatalogoResponse> listarCursos() {
         return cursos.findByAtivoTrueOrderByNomeAsc().stream()
                 .map(c -> new ItemCatalogoResponse(c.getId(), c.getNome(), null, c.getSigla()))
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public List<ItemCatalogoResponse> listarPublicosAlvo() {
         return publicos.findByAtivoTrueOrderByNomeAsc().stream()
                 .map(p -> new ItemCatalogoResponse(p.getId(), p.getNome(), p.getDescricao(), null))
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public Categoria categoriaAtiva(Long id) {
-        return categorias.findByIdAndAtivaTrue(id)
+    public Categoria categoriaAtiva(String id) {
+        return categorias.findByIdAndAtivaTrue(Ids.normalizar(id))
                 .orElseThrow(() -> new RequisicaoInvalidaException("Categoria não existe ou está inativa."));
     }
 
-    @Transactional(readOnly = true)
-    public Set<Curso> cursosAtivos(List<Long> ids) {
+    public Set<Curso> cursosAtivos(List<String> ids) {
+        ids = ids.stream().map(Ids::normalizar).toList();
         List<Curso> encontrados = cursos.findAllById(ids);
         long esperados = ids.stream().distinct().count();
         if (encontrados.size() != esperados || encontrados.stream().anyMatch(c -> !c.isAtivo())) {
@@ -60,8 +55,8 @@ public class CatalogoService {
         return new HashSet<>(encontrados);
     }
 
-    @Transactional(readOnly = true)
-    public Set<PublicoAlvo> publicosAlvoAtivos(List<Long> ids) {
+    public Set<PublicoAlvo> publicosAlvoAtivos(List<String> ids) {
+        ids = ids.stream().map(Ids::normalizar).toList();
         List<PublicoAlvo> encontrados = publicos.findAllById(ids);
         long esperados = ids.stream().distinct().count();
         if (encontrados.size() != esperados || encontrados.stream().anyMatch(p -> !p.isAtivo())) {
@@ -70,16 +65,14 @@ public class CatalogoService {
         return new HashSet<>(encontrados);
     }
 
-    @Transactional(readOnly = true)
-    public Curso cursoAtivo(Long id) {
-        return cursos.findById(id)
+    public Curso cursoAtivo(String id) {
+        return cursos.findById(Ids.normalizar(id))
                 .filter(Curso::isAtivo)
                 .orElseThrow(() -> new RequisicaoInvalidaException("Curso não existe ou está inativo."));
     }
 
-    @Transactional(readOnly = true)
-    public PublicoAlvo publicoAlvoAtivo(Long id) {
-        return publicos.findByIdAndAtivoTrue(id)
+    public PublicoAlvo publicoAlvoAtivo(String id) {
+        return publicos.findByIdAndAtivoTrue(Ids.normalizar(id))
                 .orElseThrow(() -> new RequisicaoInvalidaException("Público-alvo não existe ou está inativo."));
     }
 }

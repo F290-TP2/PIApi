@@ -1,10 +1,11 @@
 package br.com.fatecararas.piapi.domain.repository;
 
 import br.com.fatecararas.piapi.domain.entity.Curtida;
-import br.com.fatecararas.piapi.domain.entity.CurtidaId;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface CurtidaRepository extends JpaRepository<Curtida, CurtidaId> {
+public interface CurtidaRepository extends MongoRepository<Curtida, String> {
 
-    long countByIdPropostaId(Long propostaId);
+    long countByPropostaId(String propostaId);
+    boolean existsByUsuarioIdAndPropostaId(String usuarioId, String propostaId);
+    void deleteByUsuarioIdAndPropostaId(String usuarioId, String propostaId);
 }

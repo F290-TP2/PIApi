@@ -1,9 +1,7 @@
 package br.com.fatecararas.piapi.domain.repository;
 
 import br.com.fatecararas.piapi.domain.entity.Proposta;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface PropostaRepository extends JpaRepository<Proposta, Long>,
-        JpaSpecificationExecutor<Proposta> {
+public interface PropostaRepository extends MongoRepository<Proposta, String> {
 }

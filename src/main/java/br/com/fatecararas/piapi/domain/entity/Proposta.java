@@ -1,114 +1,43 @@
 package br.com.fatecararas.piapi.domain.entity;
 
-import br.com.fatecararas.piapi.domain.StatusProposta;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
+import br.com.fatecararas.piapi.domain.StatusProposta;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 
-// @Entity torna a classe uma entidade que o JPA pode persistir.
-@Entity
-// @Table informa o nome da tabela no banco.
-@Table(name = "proposta")
+// Uma proposta é um documento; não existem tabelas de junção nem carregamento LAZY.
+@Document("propostas")
+@CompoundIndex(name = "status_data", def = "{'status': 1, 'criadaEm': -1, '_id': -1}")
 @Getter
 @Setter
-// Lombok gera o construtor sem argumentos exigido pelo JPA.
 @NoArgsConstructor
 public class Proposta {
-
-    // @Id identifica a chave primária; IDENTITY deixa o banco gerar seu valor.
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    // @Column: nullable=false impede NULL; length define o tamanho da coluna de texto.
-    @Column(nullable = false, length = 120)
+    private String id;
     private String titulo;
-
-    // @Column: nullable=false impede NULL; length define o tamanho da coluna de texto.
-    @Column(nullable = false, length = 300)
     private String resumo;
-
-    // @Column: nullable=false impede NULL; length define o tamanho da coluna de texto.
-    @Column(nullable = false, length = 10000)
     private String descricao;
-
-    // Grava o nome do enum (texto), em vez de sua posição numérica.
-    @Enumerated(EnumType.STRING)
-    // @Column: nullable=false impede NULL; length define o tamanho da coluna de texto.
-    @Column(nullable = false, length = 20)
     private StatusProposta status = StatusProposta.PUBLICADA;
-
-    // N:1: várias linhas podem apontar para a mesma entidade. A referência é obrigatória.
-    // LAZY solicita carregar a entidade relacionada apenas quando ela for acessada.
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    // @JoinColumn indica a coluna de chave estrangeira nesta tabela.
-    @JoinColumn(name = "autor_id", nullable = false)
-    private Usuario autor;
-
-    // N:1: várias linhas podem apontar para a mesma entidade. A referência é obrigatória.
-    // LAZY solicita carregar a entidade relacionada apenas quando ela for acessada.
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    // @JoinColumn indica a coluna de chave estrangeira nesta tabela.
-    @JoinColumn(name = "categoria_id", nullable = false)
-    private Categoria categoria;
-
-    // N:M: propostas compartilham itens do catálogo por uma tabela de ligação.
-    // joinColumns aponta para Proposta; inverseJoinColumns, para o item do catálogo.
-    @ManyToMany
-    @JoinTable(name = "proposta_curso",
-            joinColumns = @JoinColumn(name = "proposta_id"),
-            inverseJoinColumns = @JoinColumn(name = "curso_id"))
-    private Set<Curso> cursos = new HashSet<>();
-
-    // N:M: propostas compartilham itens do catálogo por uma tabela de ligação.
-    // joinColumns aponta para Proposta; inverseJoinColumns, para o item do catálogo.
-    @ManyToMany
-    @JoinTable(name = "proposta_publico_alvo",
-            joinColumns = @JoinColumn(name = "proposta_id"),
-            inverseJoinColumns = @JoinColumn(name = "publico_alvo_id"))
-    private Set<PublicoAlvo> publicosAlvo = new HashSet<>();
-
-    // @Column: name define o nome da coluna; nullable=false impede NULL; updatable=false exclui a coluna dos UPDATEs do JPA.
-    @Column(name = "criada_em", nullable = false, updatable = false)
+    // Referências manuais armazenadas como strings, sem FK ou cascata automática.
+    // O serviço valida os IDs e consulta o autor para construir o DTO.
+    private String autorId;
+    private String categoriaId;
+    // Arrays de IDs substituem as tabelas associativas. Set evita repetições.
+    private Set<String> cursoIds = new HashSet<>();
+    private Set<String> publicoAlvoIds = new HashSet<>();
+    // Auditoria substitui @PrePersist/@PreUpdate; alterações exigem save explícito.
+    @CreatedDate
     private Instant criadaEm;
-
-    // @Column: name define o nome da coluna; nullable=false impede NULL.
-    @Column(name = "atualizada_em", nullable = false)
+    @LastModifiedDate
     private Instant atualizadaEm;
-
-    // O JPA chama este método antes de inserir a entidade.
-    @PrePersist
-    void antesDeInserir() {
-        Instant agora = Instant.now();
-        criadaEm = agora;
-        atualizadaEm = agora;
-        if (status == null) {
-            status = StatusProposta.PUBLICADA;
-        }
-    }
-
-    // O JPA chama este método antes de atualizar uma entidade alterada.
-    @PreUpdate
-    void antesDeAtualizar() {
-        atualizadaEm = Instant.now();
-    }
 }

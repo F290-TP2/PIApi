@@ -1,5 +1,7 @@
 # Tutorial 1 — Contrato REST e Insomnia
 
+> Etapa histórica com IDs numéricos. Na implementação atual, a coleção Insomnia usa IDs MongoDB em string; consulte a transição no [tutorial 03](03-mongodb-persistencia.md).
+
 ## Missão
 
 Implementar os primeiros endpoints REST de propostas da Fatec Antonio Brambilla a partir do contrato. Ao terminar, você terá controllers, validação HTTP e uma coleção Insomnia para percorrer o CRUD, filtros, catálogos e curtidas. Nesta etapa os dados ficam em memória; a etapa JPA substituirá o armazenamento.

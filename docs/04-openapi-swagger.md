@@ -1,4 +1,6 @@
-# Tutorial 3 — OpenAPI e Swagger UI
+# Tutorial 4 — OpenAPI e Swagger UI
+
+Pré-requisito: concluir a [migração MongoDB](03-mongodb-persistencia.md) e iniciar o banco com `docker compose up -d --wait`. Documente IDs como strings hexadecimais de 24 caracteres, inclusive arrays e filtros.
 
 ## Missão
 
@@ -10,7 +12,7 @@ Adicione `org.springdoc:springdoc-openapi-starter-webmvc-ui` ao `build.gradle` u
 
 ## 2. Torne o contrato legível
 
-Adicione descrições curtas aos endpoints, parâmetros, DTOs e campos. Para cada operação, informe propósito, formato de entrada, sucesso e erros esperados. Use exemplos que representem propostas plausíveis, sem dados pessoais reais. Prefira DTOs explícitos a expor entidades JPA.
+Adicione descrições curtas aos endpoints, parâmetros, DTOs e campos. Para cada operação, informe propósito, formato de entrada, sucesso e erros esperados. Use exemplos que representem propostas plausíveis, sem dados pessoais reais. Prefira DTOs explícitos a expor documentos MongoDB.
 
 ```mermaid
 flowchart LR

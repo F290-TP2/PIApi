@@ -5,7 +5,6 @@ import br.com.fatecararas.piapi.api.dto.CriarPropostaRequest;
 import br.com.fatecararas.piapi.api.dto.PaginaResponse;
 import br.com.fatecararas.piapi.api.dto.PropostaResponse;
 import br.com.fatecararas.piapi.domain.entity.Curtida;
-import br.com.fatecararas.piapi.domain.entity.CurtidaId;
 import br.com.fatecararas.piapi.domain.entity.Curso;
 import br.com.fatecararas.piapi.domain.entity.Proposta;
 import br.com.fatecararas.piapi.domain.entity.PublicoAlvo;
@@ -14,133 +13,119 @@ import br.com.fatecararas.piapi.domain.repository.CurtidaRepository;
 import br.com.fatecararas.piapi.domain.repository.PropostaRepository;
 import br.com.fatecararas.piapi.domain.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Predicate;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PropostaService {
 
     public static final int TAMANHO_PAGINA = 10;
-    private static final long USUARIO_DEMONSTRACAO_ID = 1L;
+    public static final String USUARIO_DEMONSTRACAO_ID = "000000000000000000000001";
 
     private final PropostaRepository propostas;
     private final UsuarioRepository usuarios;
     private final CurtidaRepository curtidas;
     private final CatalogoService catalogo;
+    private final MongoTemplate mongo;
 
-    @Transactional(readOnly = true)
-    public PaginaResponse<PropostaResponse> listar(String q, Long categoriaId, Long publicoAlvoId,
-                                                   Long cursoId, StatusProposta status, int page) {
+    public PaginaResponse<PropostaResponse> listar(String q, String categoriaId, String publicoAlvoId,
+                                                   String cursoId, StatusProposta status, int page) {
         if (page < 0) {
             throw new RequisicaoInvalidaException("O parâmetro page deve ser maior ou igual a zero.");
         }
 
-        Specification<Proposta> filtros = (root, query, cb) -> {
-            List<Predicate> criterios = new ArrayList<>();
-            criterios.add(cb.equal(root.get("status"), StatusProposta.PUBLICADA));
-            if (status != null) {
-                criterios.add(cb.equal(root.get("status"), status));
-            }
-            if (q != null && !q.isBlank()) {
-                String termo = "%" + q.trim().toLowerCase(Locale.ROOT) + "%";
-                criterios.add(cb.or(
-                        cb.like(cb.lower(root.get("titulo")), termo),
-                        cb.like(cb.lower(root.get("resumo")), termo),
-                        cb.like(cb.lower(root.get("descricao")), termo)));
-            }
-            if (categoriaId != null) {
-                criterios.add(cb.equal(root.get("categoria").get("id"), categoriaId));
-            }
-            if (publicoAlvoId != null) {
-                Join<Proposta, PublicoAlvo> alvo = root.join("publicosAlvo");
-                criterios.add(cb.equal(alvo.get("id"), publicoAlvoId));
-            }
-            if (cursoId != null) {
-                Join<Proposta, Curso> curso = root.join("cursos");
-                criterios.add(cb.equal(curso.get("id"), cursoId));
-            }
-            query.distinct(true);
-            return cb.and(criterios.toArray(Predicate[]::new));
-        };
-
-        Page<Proposta> pagina = propostas.findAll(filtros,
-                PageRequest.of(page, TAMANHO_PAGINA, Sort.by(Sort.Direction.DESC, "criadaEm")));
-        List<PropostaResponse> itens = pagina.getContent().stream().map(this::paraResponse).toList();
-        return new PaginaResponse<>(itens, pagina.getNumber(), TAMANHO_PAGINA,
-                pagina.getTotalElements(), pagina.getTotalPages());
+        List<Criteria> criterios = new ArrayList<>();
+        criterios.add(Criteria.where("status").is(StatusProposta.PUBLICADA));
+        if (status != null) criterios.add(Criteria.where("status").is(status));
+        if (q != null && !q.isBlank()) {
+            Pattern termo = Pattern.compile(Pattern.quote(q.trim()), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+            criterios.add(new Criteria().orOperator(Criteria.where("titulo").regex(termo),
+                    Criteria.where("resumo").regex(termo), Criteria.where("descricao").regex(termo)));
+        }
+        if (categoriaId != null) criterios.add(Criteria.where("categoriaId").is(Ids.normalizar(categoriaId)));
+        if (publicoAlvoId != null) criterios.add(Criteria.where("publicoAlvoIds").is(Ids.normalizar(publicoAlvoId)));
+        if (cursoId != null) criterios.add(Criteria.where("cursoIds").is(Ids.normalizar(cursoId)));
+        Query consulta = new Query(new Criteria().andOperator(criterios));
+        long total = mongo.count(consulta, Proposta.class);
+        // O ID desempata datas iguais para manter a paginação determinística.
+        consulta.with(PageRequest.of(page, TAMANHO_PAGINA,
+                Sort.by(Sort.Direction.DESC, "criadaEm", "id")));
+        List<PropostaResponse> itens = mongo.find(consulta, Proposta.class).stream()
+                .map(this::paraResponse).toList();
+        return new PaginaResponse<>(itens, page, TAMANHO_PAGINA, total,
+                (int) Math.ceil((double) total / TAMANHO_PAGINA));
     }
 
-    @Transactional(readOnly = true)
-    public PropostaResponse buscarPorId(Long id) {
+    public PropostaResponse buscarPorId(String id) {
         return paraResponse(buscarEntidadePublicada(id));
     }
 
-    @Transactional
     public PropostaResponse criar(CriarPropostaRequest request) {
         Proposta proposta = new Proposta();
         proposta.setTitulo(request.titulo());
         proposta.setResumo(request.resumo());
         proposta.setDescricao(request.descricao());
-        proposta.setCategoria(catalogo.categoriaAtiva(request.categoriaId()));
-        proposta.setCursos(catalogo.cursosAtivos(request.cursoIds()));
-        proposta.setPublicosAlvo(catalogo.publicosAlvoAtivos(request.publicoAlvoIds()));
-        proposta.setAutor(usuarioDemonstracao());
+        proposta.setCategoriaId(catalogo.categoriaAtiva(request.categoriaId()).getId());
+        proposta.setCursoIds(catalogo.cursosAtivos(request.cursoIds()).stream()
+                .map(Curso::getId).collect(Collectors.toSet()));
+        proposta.setPublicoAlvoIds(catalogo.publicosAlvoAtivos(request.publicoAlvoIds()).stream()
+                .map(PublicoAlvo::getId).collect(Collectors.toSet()));
+        proposta.setAutorId(usuarioDemonstracao().getId());
         return paraResponse(propostas.save(proposta));
     }
 
-    @Transactional
-    public PropostaResponse atualizar(Long id, AtualizarPropostaRequest request) {
+    public PropostaResponse atualizar(String id, AtualizarPropostaRequest request) {
         Proposta proposta = buscarEntidadePublicada(id);
         proposta.setTitulo(request.titulo());
         proposta.setResumo(request.resumo());
         proposta.setDescricao(request.descricao());
-        proposta.setCategoria(catalogo.categoriaAtiva(request.categoriaId()));
-        proposta.setCursos(catalogo.cursosAtivos(request.cursoIds()));
-        proposta.setPublicosAlvo(catalogo.publicosAlvoAtivos(request.publicoAlvoIds()));
-        propostas.flush();
-        return paraResponse(proposta);
+        proposta.setCategoriaId(catalogo.categoriaAtiva(request.categoriaId()).getId());
+        proposta.setCursoIds(catalogo.cursosAtivos(request.cursoIds()).stream()
+                .map(Curso::getId).collect(Collectors.toSet()));
+        proposta.setPublicoAlvoIds(catalogo.publicosAlvoAtivos(request.publicoAlvoIds()).stream()
+                .map(PublicoAlvo::getId).collect(Collectors.toSet()));
+        return paraResponse(propostas.save(proposta));
     }
 
-    @Transactional
-    public void arquivar(Long id) {
-        Proposta proposta = propostas.findById(id)
+    public void arquivar(String id) {
+        Proposta proposta = propostas.findById(Ids.normalizar(id))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Proposta " + id + " não encontrada."));
         proposta.setStatus(StatusProposta.ARQUIVADA);
+        propostas.save(proposta);
     }
 
-    @Transactional
-    public PropostaResponse curtir(Long id) {
+    public PropostaResponse curtir(String id) {
         Proposta proposta = buscarEntidadePublicada(id);
         Usuario usuario = usuarioDemonstracao();
-        CurtidaId curtidaId = new CurtidaId(usuario.getId(), proposta.getId());
-        if (!curtidas.existsById(curtidaId)) {
-            curtidas.save(new Curtida(usuario, proposta));
+        try {
+            curtidas.insert(new Curtida(usuario.getId(), proposta.getId()));
+        } catch (DuplicateKeyException repetida) {
+            // Apenas a duplicação do par esperado representa uma curtida idempotente.
+            if (!curtidas.existsByUsuarioIdAndPropostaId(usuario.getId(), proposta.getId())) throw repetida;
         }
         return paraResponse(proposta);
     }
 
-    @Transactional
-    public PropostaResponse removerCurtida(Long id) {
+    public PropostaResponse removerCurtida(String id) {
         Proposta proposta = buscarEntidadePublicada(id);
         Usuario usuario = usuarioDemonstracao();
-        curtidas.deleteById(new CurtidaId(usuario.getId(), proposta.getId()));
+        curtidas.deleteByUsuarioIdAndPropostaId(usuario.getId(), proposta.getId());
         return paraResponse(proposta);
     }
 
-    private Proposta buscarEntidadePublicada(Long id) {
-        return propostas.findById(id)
+    private Proposta buscarEntidadePublicada(String id) {
+        return propostas.findById(Ids.normalizar(id))
                 .filter(p -> p.getStatus() == StatusProposta.PUBLICADA)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Proposta " + id + " não encontrada."));
     }
@@ -151,19 +136,21 @@ public class PropostaService {
     }
 
     private PropostaResponse paraResponse(Proposta proposta) {
+        Usuario autor = usuarios.findById(proposta.getAutorId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Autor não encontrado."));
         return new PropostaResponse(
                 proposta.getId(),
                 proposta.getTitulo(),
                 proposta.getResumo(),
                 proposta.getDescricao(),
-                proposta.getPublicosAlvo().stream().map(PublicoAlvo::getId).toList(),
-                proposta.getCategoria().getId(),
-                proposta.getCursos().stream().map(Curso::getId).toList(),
-                proposta.getAutor().getId(),
-                proposta.getAutor().getNome(),
+                proposta.getPublicoAlvoIds().stream().sorted().toList(),
+                proposta.getCategoriaId(),
+                proposta.getCursoIds().stream().sorted().toList(),
+                proposta.getAutorId(),
+                autor.getNome(),
                 proposta.getStatus(),
-                (int) curtidas.countByIdPropostaId(proposta.getId()),
-                curtidas.existsById(new CurtidaId(USUARIO_DEMONSTRACAO_ID, proposta.getId())),
+                (int) curtidas.countByPropostaId(proposta.getId()),
+                curtidas.existsByUsuarioIdAndPropostaId(USUARIO_DEMONSTRACAO_ID, proposta.getId()),
                 proposta.getCriadaEm(),
                 proposta.getAtualizadaEm());
     }

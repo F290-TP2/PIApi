@@ -1,5 +1,7 @@
 # Gabarito — Tutorial 2: JPA e persistência
 
+> Material histórico da etapa JPA. Para reproduzir este código, use a branch `feature/02-jpa-persistence-impl`. A branch MongoDB substitui esta persistência no [tutorial 03](03-mongodb-persistencia.md); os trechos SQL/JPA abaixo são mantidos para comparação.
+
 Este gabarito acompanha a API da branch feature/01-rest-controllers. A etapa substitui os mapas em memória por Spring Data JPA, mantendo endpoints, DTOs e respostas HTTP. O exemplo usa H2 local e Flyway. Para um banco compartilhado, pode-se usar MySQL com perfil próprio.
 
 **Limite da etapa:** ainda não há login. O service usa temporariamente o usuário demonstrativo de ID 1, carregado pela migration. Na etapa Spring Security, essa referência será substituída pela identidade autenticada. O valor de senha demonstrativo é apenas um marcador, não um hash nem uma credencial utilizável.
@@ -599,7 +601,7 @@ public PropostaResponse removerCurtida(Long propostaId) {
 }
 ```
 
-Implemente buscarEntidadePublicada e usuarioDemonstracao usando findById e as exceptions existentes. Na etapa 04, troque usuarioDemonstracao pela pessoa do principal autenticado. A constraint composta do banco continua sendo a garantia contra duplicatas concorrentes.
+Implemente buscarEntidadePublicada e usuarioDemonstracao usando findById e as exceptions existentes. Na etapa de segurança (agora tutorial 05), troque usuarioDemonstracao pela pessoa do principal autenticado. A constraint composta do banco continua sendo a garantia contra duplicatas concorrentes.
 
 **Nota de desempenho:** para fins didáticos, paraResponse faz uma contagem de curtidas por proposta e pode gerar N+1 consultas numa listagem. Registre como melhoria futura; para volumes iniciais da disciplina, priorize compreender as relações e a transação.
 

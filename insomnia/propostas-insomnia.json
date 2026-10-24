@@ -18,12 +18,20 @@
       "name": "Base Environment",
       "data": {
         "base_url": "http://localhost:8080",
-        "proposta_id": "1",
-        "categoria_id": "1",
-        "curso_id": "1",
-        "publico_alvo_id": "1"
+        "proposta_id": "SUBSTITUA_PELO_ID_CRIADO",
+        "categoria_id": "000000000001000000000001",
+        "curso_id": "000000000002000000000001",
+        "publico_alvo_id": "000000000003000000000001"
       },
-      "dataPropertyOrder": { "&": ["base_url", "proposta_id", "categoria_id", "curso_id", "publico_alvo_id"] },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "proposta_id",
+          "categoria_id",
+          "curso_id",
+          "publico_alvo_id"
+        ]
+      },
       "color": null,
       "isPrivate": false,
       "metaSortKey": 1
@@ -47,12 +55,35 @@
       "url": "{{ _.base_url }}/api/propostas",
       "body": {},
       "parameters": [
-        { "name": "q", "value": "energia", "disabled": true },
-        { "name": "categoriaId", "value": "{{ _.categoria_id }}", "disabled": true },
-        { "name": "publicoAlvoId", "value": "{{ _.publico_alvo_id }}", "disabled": true },
-        { "name": "cursoId", "value": "{{ _.curso_id }}", "disabled": true },
-        { "name": "status", "value": "PUBLICADA", "disabled": true },
-        { "name": "page", "value": "0" }
+        {
+          "name": "q",
+          "value": "energia",
+          "disabled": true
+        },
+        {
+          "name": "categoriaId",
+          "value": "{{ _.categoria_id }}",
+          "disabled": true
+        },
+        {
+          "name": "publicoAlvoId",
+          "value": "{{ _.publico_alvo_id }}",
+          "disabled": true
+        },
+        {
+          "name": "cursoId",
+          "value": "{{ _.curso_id }}",
+          "disabled": true
+        },
+        {
+          "name": "status",
+          "value": "PUBLICADA",
+          "disabled": true
+        },
+        {
+          "name": "page",
+          "value": "0"
+        }
       ],
       "headers": [],
       "authentication": {},
@@ -96,10 +127,15 @@
       "url": "{{ _.base_url }}/api/propostas",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"titulo\": \"Horta inteligente para a comunidade\",\n  \"resumo\": \"Sistema acessível para monitorar uma horta comunitária.\",\n  \"descricao\": \"Proposta de trabalho interdisciplinar para monitorar umidade do solo e apoiar o cultivo comunitário.\",\n  \"publicoAlvoIds\": [1, 2],\n  \"categoriaId\": 1,\n  \"cursoIds\": [1, 2]\n}"
+        "text": "{\n  \"titulo\": \"Horta inteligente para a comunidade\",\n  \"resumo\": \"Sistema acessível para monitorar uma horta comunitária.\",\n  \"descricao\": \"Proposta de trabalho interdisciplinar para monitorar umidade do solo e apoiar o cultivo comunitário.\",\n  \"publicoAlvoIds\": [\n    \"000000000003000000000001\",\n    \"000000000003000000000002\"\n  ],\n  \"categoriaId\": \"000000000001000000000001\",\n  \"cursoIds\": [\n    \"000000000002000000000001\",\n    \"000000000002000000000002\"\n  ]\n}"
       },
       "parameters": [],
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "authentication": {},
       "metaSortKey": 3,
       "isPrivate": false,
@@ -109,7 +145,7 @@
       "settingEncodeUrl": true,
       "settingRebuildPath": true,
       "settingFollowRedirects": "global",
-      "description": "Contrato previsto. O autor será obtido da identidade autenticada quando a segurança for implementada."
+      "description": "Após criar, copie o id retornado para proposta_id no ambiente. O autor é demonstrativo até a etapa 05."
     },
     {
       "_id": "req_atualizar",
@@ -120,10 +156,15 @@
       "url": "{{ _.base_url }}/api/propostas/{{ _.proposta_id }}",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"titulo\": \"Horta inteligente comunitária\",\n  \"resumo\": \"Monitoramento acessível para apoiar o cultivo local.\",\n  \"descricao\": \"Proposta revisada após conversa com a comunidade.\",\n  \"publicoAlvoIds\": [1],\n  \"categoriaId\": 1,\n  \"cursoIds\": [1, 2]\n}"
+        "text": "{\n  \"titulo\": \"Horta inteligente comunitária\",\n  \"resumo\": \"Monitoramento acessível para apoiar o cultivo local.\",\n  \"descricao\": \"Proposta revisada após conversa com a comunidade.\",\n  \"publicoAlvoIds\": [\n    \"000000000003000000000001\"\n  ],\n  \"categoriaId\": \"000000000001000000000001\",\n  \"cursoIds\": [\n    \"000000000002000000000001\",\n    \"000000000002000000000002\"\n  ]\n}"
       },
       "parameters": [],
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "authentication": {},
       "metaSortKey": 4,
       "isPrivate": false,
@@ -175,7 +216,7 @@
       "settingEncodeUrl": true,
       "settingRebuildPath": true,
       "settingFollowRedirects": "global",
-      "description": "Operação idempotente: o mesmo usuário não cria curtidas duplicadas. Exige autenticação na etapa 04."
+      "description": "Operação idempotente: o mesmo usuário não cria curtidas duplicadas. Exige autenticação na etapa 05."
     },
     {
       "_id": "req_descurtir",
@@ -196,7 +237,7 @@
       "settingEncodeUrl": true,
       "settingRebuildPath": true,
       "settingFollowRedirects": "global",
-      "description": "Remove somente a curtida do usuário autenticado. Exige autenticação na etapa 04."
+      "description": "Remove somente a curtida do usuário autenticado. Exige autenticação na etapa 05."
     },
     {
       "_id": "fld_catalogos",
