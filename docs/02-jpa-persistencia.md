@@ -14,9 +14,23 @@ A implementação foi demonstrada ao vivo. Agora, reproduza-a de forma assíncro
 
 Ao final, o aluno deve conseguir escolher a cardinalidade, localizar a FK, distinguir tabela associativa de entidade associativa, implementar consultas derivadas e demonstrar persistência por teste sem depender da camada HTTP.
 
+## Neste tutorial
+
+- [1. Prepare o ambiente](#1-prepare-o-ambiente)
+- [2. Configure o banco e crie o esquema](#2-configure-o-banco-e-crie-o-esquema)
+- [3. Leia as cardinalidades antes de escrever Java](#3-leia-as-cardinalidades-antes-de-escrever-java)
+- [4. Crie os enums e as entidades](#4-crie-os-enums-e-as-entidades)
+- [5. Crie os seis repositórios](#5-crie-os-seis-repositórios)
+- [6. Laboratório: provar o ORM sem controller](#6-laboratório-provar-o-orm-sem-controller)
+- [7. Observe as tabelas e a duração dos dados](#7-observe-as-tabelas-e-a-duração-dos-dados)
+- [8. Investigue erros comuns](#8-investigue-erros-comuns)
+- [9. Desafio e critérios de conclusão](#9-desafio-e-critérios-de-conclusão)
+
 ## 1. Prepare o ambiente
 
-Use o projeto da etapa anterior, JDK 17, o Gradle Wrapper do repositório e acesso às dependências. Trabalhe na raiz do projeto. Confira `java -version` e `./gradlew --version`; não é necessário instalar Gradle globalmente. Mantenha as versões registradas no projeto.
+Use o projeto da etapa anterior, JDK 17, o Gradle Wrapper do repositório e acesso às dependências. Trabalhe na raiz do projeto. Confira `java -version` e `./gradlew --version` (Windows PowerShell: `.\gradlew.bat --version`); não é necessário instalar Gradle globalmente. Mantenha as versões registradas no projeto.
+
+**Windows PowerShell:** nos comandos deste tutorial, substitua `./gradlew` por `.\gradlew.bat`, mantendo os argumentos. Por exemplo: `.\gradlew.bat test --tests '*PersistenciaJpaTests'`.
 
 No `build.gradle`, mantenha Web MVC e Validation e confira as dependências abaixo. Lombok gera métodos e construtores; habilite o processamento de anotações na IDE, se ela não reconhecer os métodos gerados.
 
@@ -47,8 +61,8 @@ spring:
     name: PIApi
   datasource:
     url: jdbc:h2:mem:piapi;DB_CLOSE_DELAY=-1
-    username: aluno
-    password: fatec
+    username: sa
+    password:
     driver-class-name: org.h2.Driver
   jpa:
     open-in-view: false
@@ -65,7 +79,7 @@ spring:
       path: /h2-console
 ```
 
-H2 usa memória: os dados desaparecem quando a JVM termina. `DB_CLOSE_DELAY=-1` mantém o banco enquanto a JVM estiver viva, mesmo sem conexões abertas; isso não conserva dados após reiniciar. `aluno` e `fatec` são credenciais locais de exercício.
+H2 usa memória: os dados desaparecem quando a JVM termina. `DB_CLOSE_DELAY=-1` mantém o banco enquanto a JVM estiver viva, mesmo sem conexões abertas; isso não conserva dados após reiniciar. Na configuração atual, o usuário local é `sa` e a senha fica vazia.
 
 Flyway cria as tabelas; `ddl-auto: validate` manda Hibernate conferir o mapeamento, sem criar tabelas. Não troque por `create` ou `update` neste roteiro. `format_sql` apenas formata SQL; para exibi-lo, acrescente `show-sql: true` dentro de `spring.jpa`. `open-in-view: false` exige que associações necessárias sejam acessadas dentro de uma transação.
 
@@ -206,6 +220,33 @@ private Usuario usuario;
 A tabela hipotética precisaria de `usuario_id` com FK, `NOT NULL` e `UNIQUE`: a unicidade impede duas preferências para o mesmo usuário. Esse exemplo não integra o modelo atual e não deve ser colado em Curtida ou Proposta. Ele não obriga todo usuário a ter preferências.
 
 Também seria possível navegar de Usuario para suas propostas com `@OneToMany(mappedBy = "autor")`. `mappedBy` apontaria para o **atributo Java** `Proposta.autor`, que já controla a FK. Essa navegação inversa não é necessária nesta implementação; numa relação bidirecional, mantenha ambos os lados coerentes na memória.
+
+### Do objeto Java às tabelas de ligação
+
+```mermaid
+erDiagram
+    PROPOSTA ||--o{ PROPOSTA_CURSO : possui
+    CURSO ||--o{ PROPOSTA_CURSO : participa
+    PROPOSTA ||--o{ PROPOSTA_PUBLICO_ALVO : possui
+    PUBLICO_ALVO ||--o{ PROPOSTA_PUBLICO_ALVO : participa
+    USUARIO ||--o{ CURTIDA : registra
+    PROPOSTA ||--o{ CURTIDA : recebe
+    PROPOSTA_CURSO {
+        Long proposta_id PK, FK
+        Long curso_id PK, FK
+    }
+    PROPOSTA_PUBLICO_ALVO {
+        Long proposta_id PK, FK
+        Long publico_alvo_id PK, FK
+    }
+    CURTIDA {
+        Long usuario_id PK, FK
+        Long proposta_id PK, FK
+        Instant criada_em
+    }
+```
+
+Este recorte mostra o esquema físico da V1. `proposta_curso` e `proposta_publico_alvo` são tabelas usadas por `@ManyToMany`, sem classes próprias neste projeto. `curtida` tem data e operações próprias, por isso é mapeada como entidade. A cardinalidade zero ou muitos nas tabelas de ligação mostra que o SQL, sozinho, não exige um item mínimo; essa regra será validada na entrada da API.
 
 ## 4. Crie os enums e as entidades
 
@@ -630,7 +671,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -890,11 +930,13 @@ Execute:
 ./gradlew test
 ```
 
+Abra `build/reports/tests/test/index.html` no navegador para consultar os resultados. `flush()` envia SQL, mas não confirma a transação; `clear()` remove entidades do contexto, mas não apaga linhas. O rollback do teste desfaz as gravações ao final.
+
 O primeiro teste deve comprovar autor, categoria, dois cursos, um público, datas e curtida após nova consulta. O segundo usa INSERT direto apenas como contraprova da restrição física: salvar duas entidades com a mesma chave via `save` pode ser interpretado como atualização, não como tentativa de duplicação.
 
 ## 7. Observe as tabelas e a duração dos dados
 
-Execute `./gradlew bootRun`. Abra `http://localhost:8080/h2-console` e conecte com JDBC URL `jdbc:h2:mem:piapi`, usuário `aluno` e senha `fatec`. Use o console da mesma aplicação em execução; um cliente externo com a mesma URL em memória terá outro banco.
+Execute `./gradlew bootRun`. Abra `http://localhost:8080/h2-console` e conecte com JDBC URL `jdbc:h2:mem:piapi`, usuário `sa` e senha vazia. Use o console da mesma aplicação em execução; um cliente externo com a mesma URL em memória terá outro banco.
 
 ```sql
 SELECT * FROM usuario;
@@ -966,3 +1008,7 @@ Entregue o código e uma explicação curta com as evidências:
 - O aluno explica a diferença entre persistir durante a execução e conservar dados após reiniciar.
 
 Ao concluir, confira tanto o funcionamento do código quanto sua capacidade de justificar o modelo. A integração com services e HTTP usará esta camada pronta como ponto de partida para a próxima atividade.
+
+---
+
+[Roteiro da disciplina](../README.md#roteiro-da-disciplina) · [Anterior: tutorial 1](01-api-rest-insomnia.md) · [Próximo: tutorial 3](03-camadas-requisicoes-validacao.md)

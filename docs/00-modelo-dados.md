@@ -1,6 +1,8 @@
-# Modelo de dados — propostas interdisciplinares
+# Tutorial 0 — Modelo de dados: propostas interdisciplinares
 
 Este documento fixa o vocabulário e as regras iniciais do domínio da API da Fatec Antonio Brambilla. A implementação será incremental. A etapa 01 implementa o contrato com armazenamento em memória; persistência JPA e relacionamentos no banco entram na etapa 02.
+
+As permissões abaixo descrevem a etapa futura de [segurança](05-seguranca.md). Até o tutorial 3, a aplicação usa um usuário demonstrativo, sem login nem autorização.
 
 ## Decisões de escopo
 
@@ -8,8 +10,8 @@ Este documento fixa o vocabulário e as regras iniciais do domínio da API da Fa
 - O escopo institucional é a Fatec Antonio Brambilla.
 - Categorias, cursos e públicos-alvo são listas controladas para manter consistência em formulários e filtros.
 - O catálogo oferece todos os cursos ativos da Fatec Antonio Brambilla.
-- A listagem retorna 10 propostas por página. `page` é zero-based e não há parâmetro para alterar o tamanho.
-- Cada proposta tem um autor. O backend identifica o autor pela sessão autenticada quando a segurança entrar na etapa 04.
+- A listagem retorna até 10 propostas por página. `page` é zero-based e não há parâmetro para alterar o tamanho.
+- Cada proposta tem um autor. O backend identifica o autor pela sessão autenticada quando a segurança entrar na etapa 05.
 - Cada usuário pode curtir uma proposta no máximo uma vez. A curtida é uma entidade associativa, não apenas um contador editável no formulário.
 - `DELETE` arquiva a proposta. Isso preserva histórico e curtidas; propostas arquivadas não aparecem nas consultas públicas por padrão.
 - As regras de propriedade e perfil serão aplicadas na etapa de segurança. O cliente não escolhe o autor enviando um `autorId`.
@@ -26,7 +28,7 @@ Este documento fixa o vocabulário e as regras iniciais do domínio da API da Fa
 | `descricao` | `String` | Obrigatório; texto detalhado, limite inicial de 10.000 caracteres. |
 | `publicosAlvo` | conjunto de `PublicoAlvo` | Um ou mais públicos controlados, por exemplo, “pequenos produtores locais”. |
 | `status` | enum `StatusProposta` | `PUBLICADA` ou `ARQUIVADA`; nova proposta começa publicada na primeira versão. |
-| `autor` | `Usuario` | Muitos projetos para um autor. Definido pelo backend. |
+| `autor` | `Usuario` | Muitas propostas para um autor. Definido pelo backend. |
 | `categoria` | `Categoria` | Muitas propostas para uma categoria. Obrigatória. |
 | `cursos` | conjunto de `Curso` | Muitos-para-muitos; um ou mais cursos ativos envolvidos. |
 | `criadaEm` | `Instant` | Atribuída pelo servidor ao criar. |
@@ -116,11 +118,25 @@ erDiagram
     }
 ```
 
+O diagrama representa as regras do domínio: cada proposta deve ter ao menos um curso e um público-alvo. No banco, as tabelas de ligação e suas FKs garantem referências válidas, mas não obrigam uma proposta a ter itens nessas tabelas; DTO e service completam essa validação.
+
+## Ciclo de vida da proposta
+
+```mermaid
+stateDiagram-v2
+    [*] --> PUBLICADA: POST válido
+    PUBLICADA --> PUBLICADA: PUT atualiza campos
+    PUBLICADA --> ARQUIVADA: DELETE arquiva
+    ARQUIVADA --> ARQUIVADA: DELETE repetido
+```
+
+Arquivar preserva a linha e as curtidas. Não há rota de restauração neste ciclo. O detalhe de uma proposta arquivada retorna `404`; a listagem pública exige `PUBLICADA`, mesmo com `status=ARQUIVADA`, que resulta em lista vazia. Repetir o arquivamento de um ID existente retorna `204`.
+
 ## Contrato HTTP planejado
 
 | Método e rota | Operação | Acesso previsto |
 |---|---|---|
-| `GET /api/propostas` | Lista 10 propostas por página; filtros `q`, `categoriaId`, `publicoAlvoId`, `cursoId`, `status` e `page`. | Público, apenas publicadas por padrão. |
+| `GET /api/propostas` | Lista até 10 propostas por página; filtros `q`, `categoriaId`, `publicoAlvoId`, `cursoId`, `status` e `page`. | Público, apenas publicadas por padrão. |
 | `GET /api/propostas/{id}` | Detalhe da proposta. | Público se publicada. |
 | `POST /api/propostas` | Cria proposta; recebe título, resumo, descrição, IDs dos públicos-alvo, categoria e cursos. | USER ou ADMIN. |
 | `PUT /api/propostas/{id}` | Atualiza campos editáveis da proposta. | Autor ou ADMIN. |
@@ -134,10 +150,11 @@ erDiagram
 ### Respostas HTTP esperadas
 
 - `GET` retorna `200 OK`; identificador indisponível retorna `404 Not Found`.
-- `POST /api/propostas` retorna `201 Created` e o recurso criado (idealmente com cabeçalho `Location`).
+- `POST /api/propostas` retorna `201 Created` e o recurso criado com cabeçalho `Location`.
 - `PUT` retorna `200 OK` com a representação atualizada, ou `404 Not Found`.
-- `DELETE` retorna `204 No Content` após arquivar, ou `404 Not Found`.
-- Dados inválidos retornam `400 Bad Request` com mensagens associadas aos campos.
+- `DELETE /api/propostas/{id}` retorna `204 No Content` após arquivar, ou `404 Not Found` se o ID não existir.
+- `DELETE /api/propostas/{id}/curtida` retorna `200 OK` com a proposta atualizada; proposta indisponível retorna `404`.
+- Dados inválidos retornam `400 Bad Request`: violações do DTO têm mensagens por campo; erros de regra e JSON ilegível têm mensagem geral. Veja os limites do handler no [tutorial 3](03-camadas-requisicoes-validacao.md).
 - A etapa de segurança define `401 Unauthorized` para pessoa não autenticada e `403 Forbidden` para pessoa sem permissão.
 
 Exemplo do corpo de criação:
@@ -153,7 +170,7 @@ Exemplo do corpo de criação:
 }
 ```
 
-Login, registro e manutenção administrativa de categorias, cursos e públicos-alvo serão especificados junto com a segurança e a interface. Respostas de listagem incluem `quantidadeCurtidas`; para usuário autenticado podem incluir `curtidaPeloUsuarioAtual`. A paginação usa `page` (começando em zero) e retorna sempre 10 itens por página. DTOs nunca incluem hash de senha.
+Login, registro e manutenção administrativa de categorias, cursos e públicos-alvo serão especificados junto com a segurança e a interface. Respostas de listagem incluem `quantidadeCurtidas`; para usuário autenticado podem incluir `curtidaPeloUsuarioAtual`. A paginação usa `page` (começando em zero) e retorna até 10 itens por página. DTOs nunca incluem hash de senha.
 
 ## Padrões e arquitetura
 
@@ -163,5 +180,13 @@ Spring MVC orienta o fluxo Controller → Service → Repository. JPA implementa
 
 - O catálogo apresenta todos os cursos ativos.
 - Públicos-alvo são selecionados de uma lista controlada e podem ser associados em conjunto à proposta.
-- Cada página da listagem contém 10 propostas; `page` é zero-based.
+- Cada página da listagem contém até 10 propostas; `page` é zero-based.
 - Rascunhos, comentários e anexos estão aprovados como melhorias futuras, fora do primeiro ciclo. Registrar como backlog para etapas posteriores, depois do CRUD, busca, curtidas, documentação, segurança e interface iniciais.
+
+## Confira sua compreensão
+
+Explique por que duas propostas podem compartilhar um curso, por que uma curtida precisa dos dois IDs e por que arquivar não apaga o registro. Identifique quais regras dependem do banco e quais dependem da aplicação.
+
+---
+
+[Roteiro da disciplina](../README.md#roteiro-da-disciplina) · [Próximo: tutorial 1](01-api-rest-insomnia.md)

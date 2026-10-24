@@ -1,10 +1,26 @@
-# Tutorial 2b — Requisições HTTP, camadas e validação
+# Tutorial 3 — Requisições HTTP, camadas e validação
+
+> **Status:** tutorial planejado no roteiro da disciplina.
 
 ## Missão
 
-Depois de reproduzir a [persistência com JPA](02-jpa-persistencia.md), conecte a camada de dados às requisições da API. Este roteiro acompanha a branch `feature/03-resources-validation` e prepara a [documentação com Swagger](03-openapi-swagger.md), que continua sendo a próxima etapa.
+Depois de reproduzir a [persistência com JPA](02-jpa-persistencia.md), conecte a camada de dados às requisições da API. Este roteiro acompanha a branch `feature/03-resources-validation` e prepara a [documentação com Swagger](04-openapi-swagger.md), que continua sendo a próxima etapa.
 
 Reproduza individualmente e de forma assíncrona o fluxo demonstrado ao vivo. Ao final, você deverá explicar onde entram os dados, quem valida cada regra, quem acessa o banco e como a resposta chega ao cliente. Não vamos alterar o contrato, adicionar autenticação ou configurar Swagger aqui.
+
+O status planejado refere-se ao roteiro da disciplina; a branch indicada já contém o código de referência.
+
+## Neste tutorial
+
+- [1. Prepare o projeto e organize os pacotes](#1-prepare-o-projeto-e-organize-os-pacotes)
+- [2. Entenda o caminho completo](#2-entenda-o-caminho-completo)
+- [3. Repository Pattern: acesso aos dados](#3-repository-pattern-acesso-aos-dados)
+- [4. DTOs: contrato de entrada e saída](#4-dtos-contrato-de-entrada-e-saída)
+- [5. Service Layer: regras e transações](#5-service-layer-regras-e-transações)
+- [6. Resources: ligação entre HTTP e aplicação](#6-resources-ligação-entre-http-e-aplicação)
+- [7. Validação e tradução de erros](#7-validação-e-tradução-de-erros)
+- [8. Reproduza as requisições](#8-reproduza-as-requisições)
+- [9. Desafio individual e conclusão](#9-desafio-individual-e-conclusão)
 
 ## 1. Prepare o projeto e organize os pacotes
 
@@ -714,6 +730,23 @@ Observe que DELETE da proposta responde `204`, mas DELETE da curtida responde `2
 
 ## 7. Validação e tradução de erros
 
+```mermaid
+flowchart TD
+    A[POST com corpo JSON] --> B{JSON legível e tipos compatíveis?}
+    B -->|Não| C[400: corpo inválido]
+    B -->|Sim| D{DTO atende às constraints?}
+    D -->|Não| E[400: erros por campo]
+    D -->|Sim| F[Resource chama Service]
+    F --> G{Catálogos existem e estão ativos?}
+    G -->|Não| H[400: regra de negócio]
+    G -->|Sim| I[Repository persiste a proposta]
+    I --> J[Transação concluída e DTO retornado]
+    J --> K[201 com Location e corpo]
+```
+
+O diagrama acompanha a criação bem-sucedida e as rejeições tratadas. Falhas de infraestrutura ou integridade no banco não viram automaticamente `400`. Nas duas primeiras rejeições, o método do resource ainda não foi executado.
+
+
 As três verificações não se substituem:
 
 | Situação | Quem detecta | Resultado atual |
@@ -809,18 +842,29 @@ Exemplo ilustrativo para título vazio (a mensagem do campo pode variar):
 
 ## 8. Reproduza as requisições
 
-Execute na raiz:
+Execute na raiz, no Linux/macOS (Bash):
 
 ```bash
 ./gradlew test
 ./gradlew bootRun
 ```
 
+No Windows (PowerShell):
+
+```powershell
+.\gradlew.bat test
+.\gradlew.bat bootRun
+```
+
 A aplicação usa H2 em memória. A V2 fornece usuário 1, categorias 1 a 4, cursos 1 a 3 e públicos 1 a 4. Inicialmente não existem propostas. Reiniciar a JVM apaga os dados criados; os dados iniciais são carregados novamente. As credenciais do H2 não são credenciais de autenticação HTTP.
+
+Mantenha `bootRun` em execução e abra um **segundo terminal** na raiz para os comandos HTTP. Encerre a aplicação com `Ctrl+C` ao terminar.
 
 Use a coleção `insomnia/propostas-insomnia.json` ou os comandos abaixo. Todos os exemplos usam a porta padrão 8080 e `Content-Type: application/json` nas escritas. Os arquivos JSON criados pelos comandos são temporários e não devem ser versionados.
 
 ### 8.1. Consulte os catálogos e crie uma proposta
+
+No Linux/macOS (Bash):
 
 ```bash
 curl -i http://localhost:8080/api/categorias
@@ -840,6 +884,31 @@ JSON
 
 curl -i -X POST http://localhost:8080/api/propostas   -H 'Content-Type: application/json'   --data-binary @/tmp/piapi-proposta.json
 ```
+
+No Windows, abra o **PowerShell** e execute o equivalente abaixo. O bloco `@' ... '@` substitui o `cat` com delimitador `JSON`; mantenha o fechamento `'@` no início da linha. O arquivo será salvo na pasta temporária do Windows, em UTF-8 sem BOM, inclusive no Windows PowerShell 5.1.
+
+```powershell
+curl.exe -i http://localhost:8080/api/categorias
+curl.exe -i http://localhost:8080/api/cursos
+curl.exe -i http://localhost:8080/api/publicos-alvo
+
+$arquivoProposta = Join-Path $env:TEMP 'piapi-proposta.json'
+$json = @'
+{
+  "titulo": "Horta comunitária conectada",
+  "resumo": "Monitoramento acessível de uma horta local.",
+  "descricao": "Integração de tecnologia e sustentabilidade na comunidade.",
+  "publicoAlvoIds": [1],
+  "categoriaId": 1,
+  "cursoIds": [1, 2]
+}
+'@
+[System.IO.File]::WriteAllText($arquivoProposta, $json, [System.Text.UTF8Encoding]::new($false))
+
+curl.exe -i -X POST http://localhost:8080/api/propostas -H 'Content-Type: application/json' --data-binary "@$arquivoProposta"
+```
+
+Nos próximos exemplos, que usam Bash, adapte no PowerShell: use `curl.exe` no lugar de `curl` (para evitar o alias do Windows PowerShell), `$proposta_id = 1` no lugar de `proposta_id=1` e `--data-binary "@$arquivoProposta"` no lugar de `--data-binary @/tmp/piapi-proposta.json`. Para enviar o JSON com categoria inexistente da seção 8.2, edite `categoriaId` para `999999` no arquivo e envie-o com `--data-binary "@$arquivoProposta"`; isso evita problemas com aspas de JSON na linha de comando do Windows PowerShell.
 
 Espere `200` nos catálogos e `201` na criação. Copie o ID retornado e confira se `Location` termina em `/api/propostas/ID`. A saída deve conter autor e metadados, sem `senhaHash`. A existência de um `autorId` na resposta não significa que o cliente escolhe o autor na entrada.
 
@@ -892,6 +961,19 @@ curl -i http://localhost:8080/api/propostas
 
 Espere `204` sem corpo, depois `404` no detalhe e `200` na listagem sem a proposta arquivada. O registro continua no banco com status `ARQUIVADA`.
 
+### 8.4. Registre as evidências
+
+| Caso | Status esperado | Evidência no corpo ou cabeçalho |
+|---|---|---|
+| Criação válida | `201` | `Location` e `id` da proposta |
+| DTO vazio | `400` | `campos` com violações |
+| JSON malformado | `400` | Mensagem geral e `campos` vazio |
+| Categoria inexistente | `400` | Mensagem da regra e `campos` vazio |
+| Proposta inexistente ou arquivada no detalhe | `404` | Mensagem de recurso não encontrado |
+| Arquivamento | `204` | Corpo vazio |
+
+Se usar o PowerShell, restaure `categoriaId` para um ID válido no JSON após o teste de rejeição, antes de reutilizar o arquivo em chamadas válidas.
+
 ## 9. Desafio individual e conclusão
 
 Envie uma criação com `cursoIds: [null]` e outra com `cursoIds: [999999]`, mantendo os demais campos válidos. Compare o corpo dos erros e identifique qual camada rejeitou cada caso. Depois explique por que `@Column(nullable=false)` na entidade não substitui `@NotBlank` no DTO.
@@ -906,4 +988,8 @@ Conclua quando conseguir:
 - Distinguir formato de erro personalizado de falhas que continuam no tratamento padrão do MVC.
 - Explicar por que não retornamos entidades JPA nem hash de senha na API.
 
-Agora você tem o contrato e suas responsabilidades explicitados. No [tutorial Swagger](03-openapi-swagger.md), documentaremos essas mesmas rotas, parâmetros, DTOs, respostas e limites para quem consome a API. Não instalamos springdoc nem adicionamos anotações OpenAPI nesta etapa.
+Agora você tem o contrato e suas responsabilidades explicitados. No [tutorial Swagger](04-openapi-swagger.md), documentaremos essas mesmas rotas, parâmetros, DTOs, respostas e limites para quem consome a API. Não instalamos springdoc nem adicionamos anotações OpenAPI nesta etapa.
+
+---
+
+[Roteiro da disciplina](../README.md#roteiro-da-disciplina) · [Anterior: tutorial 2](02-jpa-persistencia.md) · [Próximo: tutorial 4](04-openapi-swagger.md)

@@ -7,10 +7,10 @@ Repositório didático da disciplina **Técnicas de Programação 2**. A turma v
 0. [Modelo de dados e contrato do domínio](docs/00-modelo-dados.md) — entidades, atributos, relações e regras propostas.
 1. [Primeira API REST e coleção Insomnia](docs/01-api-rest-insomnia.md) — contrato HTTP das propostas e coleção de requisições.
 2. [Persistência com JPA e ORM](docs/02-jpa-persistencia.md) — mapeamentos, entidades, repositórios e laboratório da camada de dados.
-   - [Camadas, requisições e validação — Tutorial 2b](docs/02b-camadas-requisicoes-validacao.md) — Repository, Service Layer, resources, DTOs e tratamento de erros.
-3. [Documentação com OpenAPI e Swagger UI](docs/03-openapi-swagger.md) — contrato navegável e testes pelo navegador.
-4. [Autenticação e autorização](docs/04-seguranca.md) — perfis `ADMIN` e `USER`, rotas públicas e protegidas.
-5. [Aplicação Web para propostas](docs/05-aplicacao-web.md) — login e publicação de propostas consumindo a API.
+3. [Camadas, requisições e validação](docs/03-camadas-requisicoes-validacao.md) — **Tutorial planejado:** Repository, Service Layer, resources, DTOs e tratamento de erros.
+4. [Documentação com OpenAPI e Swagger UI](docs/04-openapi-swagger.md) — contrato navegável e testes pelo navegador.
+5. [Autenticação e autorização](docs/05-seguranca.md) — perfis `ADMIN` e `USER`, rotas públicas e protegidas.
+6. [Aplicação Web para propostas](docs/06-aplicacao-web.md) — login e publicação de propostas consumindo a API.
 
 Após o primeiro ciclo, o backlog aprovado inclui rascunhos de propostas, comentários e anexos. Esses itens serão planejados em etapas próprias depois que o percurso inicial estiver concluído.
 
@@ -38,7 +38,7 @@ Os pacotes abaixo partem de `br.com.fatecararas.piapi`:
 | `domain.entity` | Entidades e mapeamentos JPA |
 | `domain.model` e `domain.exception` | Enums e exceções da aplicação |
 
-Repository e Service Layer expressam responsabilidades; não são padrões GoF. O tutorial 2b detalha a ligação dessas camadas antes de documentar a API com Swagger.
+Repository e Service Layer expressam responsabilidades; não são padrões GoF. O tutorial 3, planejado no roteiro, detalha a ligação dessas camadas antes de documentar a API com Swagger.
 
 ## Executar
 
@@ -48,7 +48,7 @@ Requisitos: JDK 17 e acesso às dependências Gradle. Na raiz:
 ./gradlew bootRun
 ```
 
-A API responde em `http://localhost:8080/api/propostas`. A implementação atual usa JPA com H2 em memória. Flyway cria as tabelas e carrega catálogos e um usuário demonstrativo; não há propostas iniciais. Os dados criados desaparecem ao encerrar a JVM. Ainda não há login: o autor usado nas operações é o usuário demonstrativo. Consulte o tutorial JPA para opções de banco persistente e o tutorial 2b para exercitar as requisições.
+A API responde em `http://localhost:8080/api/propostas`. A implementação atual usa JPA com H2 em memória. Flyway cria as tabelas e carrega catálogos e um usuário demonstrativo; não há propostas iniciais. Os dados criados desaparecem ao encerrar a JVM. Ainda não há login: o autor usado nas operações é o usuário demonstrativo. Consulte o tutorial JPA para opções de banco persistente e o tutorial 3 para exercitar as requisições.
 
 Execute `./gradlew test` para verificar os testes. A documentação Swagger será implementada na próxima etapa.
 
