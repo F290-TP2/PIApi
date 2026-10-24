@@ -19,3 +19,12 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+# Documenta apenas o contrato público da aplicação, sem /error ou console H2.
+springdoc:
+  paths-to-match: /api/**
+  override-with-generic-response: false
+  default-produces-media-type: application/json
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: method

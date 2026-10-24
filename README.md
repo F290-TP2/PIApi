@@ -50,7 +50,11 @@ Requisitos: JDK 17 e acesso às dependências Gradle. Na raiz:
 
 A API responde em `http://localhost:8080/api/propostas`. A implementação atual usa JPA com H2 em memória. Flyway cria as tabelas e carrega catálogos e um usuário demonstrativo; não há propostas iniciais. Os dados criados desaparecem ao encerrar a JVM. Ainda não há login: o autor usado nas operações é o usuário demonstrativo. Consulte o tutorial JPA para opções de banco persistente e o tutorial 3 para exercitar as requisições.
 
-Execute `./gradlew test` para verificar os testes. A documentação Swagger será implementada na próxima etapa.
+No Windows PowerShell, use `.\gradlew.bat bootRun` e `.\gradlew.bat test`.
+
+A documentação está disponível na [Swagger UI](http://localhost:8080/swagger-ui/index.html), com o contrato em [JSON](http://localhost:8080/v3/api-docs) ou [YAML](http://localhost:8080/v3/api-docs.yaml). O [tutorial 4](docs/04-openapi-swagger.md) acompanha a branch `feature/04-openapi-swagger` e explica configuração, anotações e laboratório.
+
+Execute `./gradlew test` para verificar a suíte, incluindo o contrato OpenAPI. Para executar apenas os testes da documentação, use `./gradlew test --tests '*OpenApiTests'`.
 
 ## Materiais
 

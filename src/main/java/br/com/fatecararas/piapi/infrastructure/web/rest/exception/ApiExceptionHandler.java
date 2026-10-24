@@ -2,6 +2,7 @@ package br.com.fatecararas.piapi.infrastructure.web.rest.exception;
 
 import br.com.fatecararas.piapi.domain.exception.RecursoNaoEncontradoException;
 import br.com.fatecararas.piapi.domain.exception.RequisicaoInvalidaException;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -51,7 +52,13 @@ public class ApiExceptionHandler {
                 "Requisição inválida", "O corpo ou um dos parâmetros não tem o formato esperado.", Map.of()));
     }
 
-    public record ErroResponse(Instant instante, int status, String erro, String mensagem,
-                               Map<String, String> campos) {
+    @Schema(description = "Erro tratado pelo advice. Falhas de conversão em query/path não seguem este modelo.")
+    public record ErroResponse(
+            @Schema(description = "Instante do erro em UTC.") Instant instante,
+            @Schema(description = "Código HTTP.", example = "400") int status,
+            @Schema(description = "Categoria do erro.", example = "Dados inválidos") String erro,
+            @Schema(description = "Orientação para o consumidor.", example = "Revise os campos informados.") String mensagem,
+            @Schema(description = "Uma mensagem por campo inválido; vazio para erros de regra ou JSON.")
+            Map<String, String> campos) {
     }
 }
